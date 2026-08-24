@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remote Work Portal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login View -->
+    <div id="login-view" class="view">
+      <div class="card login-card">
+        <h2>Employee Portal Login</h2>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="employee@company.com">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="••••••••">
+          </div>
+          <button type="submit" id="btn-login" class="btn primary-btn">Sign In</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard / Remote Requests View -->
+    <div id="dashboard-view" class="view hidden">
+      <header class="app-header">
+        <h1>Remote Work Management</h1>
+        <div class="user-profile">
+          <span id="user-display">employee@company.com</span>
+          <button id="btn-logout" class="btn secondary-btn">Sign Out</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="toolbar">
+          <h2>My Remote Work Requests</h2>
+          <button id="btn-new-request" class="btn primary-btn">New Request</button>
+        </div>
+
+        <div class="table-container">
+          <table id="requests-table">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="requests-list">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- Request Modal -->
+      <div id="request-modal" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="modal-content card">
+          <div class="modal-header">
+            <h3>Create Remote Work Request</h3>
+            <button id="btn-close-modal" class="btn-close">&times;</button>
+          </div>
+          <form id="request-form">
+            <div class="form-group">
+              <label for="request-date">Date</label>
+              <input type="date" id="request-date" name="date" required>
+            </div>
+            <div class="form-group">
+              <label for="request-reason">Reason</label>
+              <textarea id="request-reason" name="reason" rows="3" required placeholder="Describe your remote work plan..."></textarea>
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="btn-cancel" class="btn secondary-btn">Cancel</button>
+              <button type="submit" id="btn-submit-request" class="btn primary-btn">Submit Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

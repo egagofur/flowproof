@@ -1,0 +1,75 @@
+id: employee.remote-request.create
+name: Employee Creates Remote Request
+description: >
+  Employee creates a remote request and verifies that it appears as Pending in the request list.
+priority: critical
+roles:
+  - employee
+tags:
+  - remote-request
+  - employee-portal
+
+preconditions:
+  - authenticated_as: employee
+  - route: /remote-requests
+
+steps:
+  - id: step-open-modal
+    action: click
+    target: "button#btn-new-request"
+    description: Open request modal
+
+  - id: step-fill-reason
+    action: fill
+    target: "textarea#request-reason"
+    value: "Focused sprint work from home"
+    description: Enter request reason
+
+  - id: step-select-date
+    action: select_date
+    target: "input#request-date"
+    value: tomorrow
+    description: Select tomorrow's date
+
+  - id: step-submit
+    action: click
+    target: "button#btn-submit-request"
+    description: Submit remote work request
+
+assertions:
+  - id: assert-modal-closed
+    type: element_hidden
+    target: "div#request-modal:not(.hidden)"
+    description: Modal dialog should close after submission
+
+  - id: assert-request-visible
+    type: text_contains
+    target: "table#requests-table"
+    value: "Focused sprint work from home"
+    description: Created request appears in the table
+
+  - id: assert-status-pending
+    type: text_contains
+    target: "table#requests-table .status-badge"
+    value: "Pending"
+    description: Request status must be Pending
+
+evidence:
+  checkpoints:
+    - id: request-form
+      trigger: after_step
+      stepId: step-fill-reason
+      screenshot: true
+      description: Request form filled
+
+    - id: request-created
+      trigger: after_assertion
+      assertionId: assert-request-visible
+      screenshot: true
+      description: Request visible in table
+
+    - id: request-pending
+      trigger: after_assertion
+      assertionId: assert-status-pending
+      screenshot: true
+      description: Status verified as Pending

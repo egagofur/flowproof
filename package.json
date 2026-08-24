@@ -1,0 +1,46 @@
+{
+  "name": "flowproof",
+  "version": "0.1.0",
+  "description": "AI-driven E2E verification orchestrator for software development workflows",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flowproof": "./bin/flowproof.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "verification",
+    "orchestrator",
+    "playwright",
+    "aside",
+    "ai-agent",
+    "flow-mapping",
+    "evidence"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "esbuild": "^0.21.5",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.49.1",
+    "yaml": "^2.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
