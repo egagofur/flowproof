@@ -109,23 +109,32 @@ export class AsideDriver {
           if (tagName === 'select') {
             await loc.selectOption(value, { timeout: 8000 });
           } else {
-            await loc.click({ timeout: 8000 });
+            const selector = loc.locator('.ant-select-selector').first();
+            if (await selector.isVisible().catch(() => false)) {
+              await selector.click({ force: true });
+            } else {
+              await loc.click({ force: true });
+            }
             await this.page.waitForTimeout(600);
             const activeDropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').first();
             const option = activeDropdown.locator(
               `.ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
             ).first();
             if (await option.isVisible().catch(() => false)) {
-              await option.click({ timeout: 5000 });
+              await option.click({ force: true });
             } else {
               const firstOpt = activeDropdown.locator(
                 '.ant-select-item-option, [role="option"]'
               ).first();
               if (await firstOpt.isVisible().catch(() => false)) {
-                await firstOpt.click({ timeout: 5000 });
+                await firstOpt.click({ force: true });
               }
             }
-            await this.page.waitForTimeout(500);
+            await this.page.waitForTimeout(400);
+            if (await activeDropdown.isVisible().catch(() => false)) {
+              await this.page.keyboard.press('Escape');
+              await this.page.waitForTimeout(300);
+            }
           }
           trajectory.push(`Selected option '${value}'`);
           break;
