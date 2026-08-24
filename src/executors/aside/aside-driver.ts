@@ -259,7 +259,13 @@ export class AsideDriver {
       return this.page.locator(target).first();
     }
 
-    // 2. Extract inner text from target if contains quotes or :has-text()
+    // 2. If target is an Ant Design form field or hidden input inside select
+    const antdWrapper = this.page.locator(`.ant-select:has(${target}), .ant-form-item:has(${target}) .ant-select-selector, .ant-form-item:has(${target}) .ant-select`).first();
+    if (await antdWrapper.isVisible().catch(() => false)) {
+      return antdWrapper;
+    }
+
+    // 3. Extract inner text from target if contains quotes or :has-text()
     const textMatch = target.match(/['"]([^'"]+)['"]/);
     if (textMatch && textMatch[1]) {
       const text = textMatch[1];
