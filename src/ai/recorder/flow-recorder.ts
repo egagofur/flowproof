@@ -96,7 +96,21 @@ export class FlowRecorder {
           return `[data-testid="${el.getAttribute('data-testid')}"]`;
         }
 
-        // 2. Form item label association (Ant Design / standard forms)
+        // 2. Ant Design Select Option item
+        const optionItem = el.closest('.ant-select-item-option') || el.closest('.ant-select-dropdown [role="option"]');
+        if (optionItem || el.classList?.contains('ant-select-item-option-content')) {
+          const text = (optionItem || el).textContent?.trim();
+          if (text) return `.ant-select-item-option:has-text("${text}")`;
+        }
+
+        // 3. Ant Design DatePicker cell
+        const pickerCell = el.closest('.ant-picker-cell');
+        if (pickerCell || el.classList?.contains('ant-picker-cell-inner')) {
+          const text = (pickerCell || el).textContent?.trim();
+          if (text) return `.ant-picker-cell:not(.ant-picker-cell-disabled):has-text("${text}")`;
+        }
+
+        // 4. Form item label association (Ant Design / standard forms)
         const formItem = el.closest('.ant-form-item');
         if (formItem) {
           const label = formItem.querySelector('label')?.textContent?.trim();
@@ -107,33 +121,38 @@ export class FlowRecorder {
           }
         }
 
-        // 3. Aria label
-        if (el.getAttribute('aria-label')) {
-          return `[aria-label="${el.getAttribute('aria-label')}"]`;
-        }
-
-        // 4. Placeholder
-        if (el.getAttribute('placeholder')) {
-          return `input[placeholder="${el.getAttribute('placeholder')}"]`;
-        }
-
-        // 5. Button with text
-        if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
-          const text = el.textContent?.trim();
-          if (text && text.length < 30) {
+        // 5. Button or element inside button with text
+        const btn = el.tagName === 'BUTTON' ? el : el.closest('button');
+        if (btn) {
+          const text = btn.textContent?.trim();
+          if (text && text.length < 35 && !text.includes('\n')) {
             return `button:has-text("${text}")`;
+          }
+          if (btn.getAttribute('aria-label')) {
+            return `button[aria-label="${btn.getAttribute('aria-label')}"]`;
           }
         }
 
         // 6. Link with text
-        if (el.tagName === 'A') {
-          const text = el.textContent?.trim();
-          if (text && text.length < 30) {
+        const link = el.tagName === 'A' ? el : el.closest('a');
+        if (link) {
+          const text = link.textContent?.trim();
+          if (text && text.length < 35 && !text.includes('\n')) {
             return `a:has-text("${text}")`;
           }
         }
 
-        // 7. Input name or id
+        // 7. Aria label
+        if (el.getAttribute('aria-label')) {
+          return `[aria-label="${el.getAttribute('aria-label')}"]`;
+        }
+
+        // 8. Placeholder
+        if (el.getAttribute('placeholder')) {
+          return `input[placeholder="${el.getAttribute('placeholder')}"]`;
+        }
+
+        // 9. Input name or id
         if (el.getAttribute('name')) {
           return `input[name="${el.getAttribute('name')}"]`;
         }
@@ -141,7 +160,13 @@ export class FlowRecorder {
           return `#${el.id}`;
         }
 
-        // 8. Class fallback
+        // 10. Text content fallback for clickable items
+        const text = el.textContent?.trim();
+        if (text && text.length > 1 && text.length < 30 && !text.includes('\n')) {
+          return `${el.tagName.toLowerCase()}:has-text("${text}")`;
+        }
+
+        // 11. Class fallback
         const className = typeof el.className === 'string' ? el.className.split(' ')[0] : '';
         if (className) {
           return `${el.tagName.toLowerCase()}.${className}`;
