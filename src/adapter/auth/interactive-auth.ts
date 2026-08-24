@@ -16,7 +16,7 @@ export interface InteractiveBrowserAuthOptions {
 export class InteractiveBrowserAuthStrategy implements AuthStrategy {
   public readonly name = 'InteractiveBrowserAuth';
 
-  constructor(private options: InteractiveBrowserAuthOptions = {}) {}
+  constructor(private options: InteractiveBrowserAuthOptions = {}) { }
 
   public async authenticate(context: ExecutionContext, role: string): Promise<AuthResult> {
     const storagePath =
@@ -47,10 +47,43 @@ export class InteractiveBrowserAuthStrategy implements AuthStrategy {
       ? this.options.loginUrl || '/auth/login'
       : new URL(this.options.loginUrl || '/auth/login', context.baseUrl).toString();
 
-    const browser = await chromium.launch({ headless: false });
+    let browser;
+    try {
+      // Try real Google Chrome first for Google OAuth compatibility
+      browser = await chromium.launch({
+        headless: false,
+        channel: 'chrome',
+        args: [
+          '--disable-blink-features=AutomationControlled',
+          '--no-sandbox',
+        ],
+        ignoreDefaultArgs: ['--enable-automation'],
+      });
+    } catch {
+      // Fallback to standard chromium
+      browser = await chromium.launch({
+        headless: false,
+        args: [
+          '--disable-blink-features=AutomationControlled',
+          '--no-sandbox',
+        ],
+        ignoreDefaultArgs: ['--enable-automation'],
+      });
+    }
+
     const browserCtx = await browser.newContext({
       viewport: { width: 1280, height: 720 },
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     });
+
+    await browserCtx.addInitScript(() => {
+      // Mask Playwright automation flags from Google OAuth
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+      });
+    });
+
     const page = await browserCtx.newPage();
 
     try {
@@ -111,7 +144,7 @@ export class InteractiveBrowserAuthStrategy implements AuthStrategy {
         error: `Interactive login failed: ${err.message}`,
       };
     } finally {
-      await browser.close().catch(() => {});
+      await browser.close().catch(() => { });
     }
   }
 }
