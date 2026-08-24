@@ -1,5 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { ProjectConfig } from './config.js';
 import { ExecutorRegistry } from '../executors/base.js';
 import { PlaywrightExecutor } from '../executors/playwright/playwright-executor.js';
@@ -83,7 +84,24 @@ export class AdapterRegistry {
       const tempPath = path.join(configDir, `.flowproof.config.temp.${Date.now()}.mjs`);
       try {
         const { build } = await import('esbuild');
-        const res = await build({
+        const currentDir = path.dirname(fileURLToPath(import.meta.url));
+        const candidateEntries = [
+          path.resolve(currentDir, 'index.js'),
+          path.resolve(currentDir, '../index.js'),
+          path.resolve(currentDir, '../src/index.ts'),
+          path.resolve(currentDir, '../../dist/index.js'),
+          path.resolve(currentDir, '../../src/index.ts'),
+        ];
+        let flowproofEntry: string | undefined;
+        for (const candidate of candidateEntries) {
+          try {
+            await fs.access(candidate);
+            flowproofEntry = candidate;
+            break;
+          } catch {}
+        }
+
+        const buildOptions: any = {
           entryPoints: [filePath],
           bundle: true,
           write: false,
@@ -91,7 +109,16 @@ export class AdapterRegistry {
           platform: 'node',
           target: 'es2022',
           packages: 'external',
-        });
+        };
+
+        if (flowproofEntry) {
+          buildOptions.alias = { flowproof: flowproofEntry };
+        }
+
+        const res = await build(buildOptions);
+        if (!res.outputFiles || res.outputFiles.length === 0) {
+          throw new Error('Bundling produced no output');
+        }
         const code = res.outputFiles[0].text;
         await fs.writeFile(tempPath, code, 'utf-8');
         const mod = await import(`file://${tempPath}`);
