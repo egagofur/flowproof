@@ -183,19 +183,19 @@ export class AsideDriver {
 
       switch (assertion.type) {
         case 'element_visible': {
-          const loc = this.page.locator(assertion.target || 'body');
+          const loc = this.page.locator(assertion.target || 'body').first();
           passed = await loc.isVisible({ timeout: 5000 }).catch(() => false);
           actual = passed ? 'visible' : 'hidden';
           break;
         }
         case 'element_hidden': {
-          const loc = this.page.locator(assertion.target || 'body');
+          const loc = this.page.locator(assertion.target || 'body').first();
           passed = !(await loc.isVisible().catch(() => false));
           actual = passed ? 'hidden' : 'visible';
           break;
         }
         case 'text_contains': {
-          const loc = this.page.locator(assertion.target || 'body');
+          const loc = this.page.locator(assertion.target || 'body').first();
           const text = (await loc.textContent().catch(() => '')) || '';
           passed = text.includes(String(assertion.value));
           actual = text.trim();
