@@ -6,6 +6,7 @@ import { verifyCommand } from './commands/verify.js';
 import { inspectCommand } from './commands/inspect.js';
 import { evidenceCommand } from './commands/evidence.js';
 import { pruneCommand } from './commands/prune.js';
+import { createRecordCommand } from './commands/record.js';
 
 export function createCli(): Command {
   const program = new Command();
@@ -14,6 +15,8 @@ export function createCli(): Command {
     .name('flowproof')
     .description('AI-driven E2E verification orchestrator — Prove the user flow.')
     .version('0.1.0');
+
+  program.addCommand(createRecordCommand());
 
   program
     .command('init')
