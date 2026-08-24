@@ -86,9 +86,9 @@ export class AdapterRegistry {
         const { build } = await import('esbuild');
         const currentDir = path.dirname(fileURLToPath(import.meta.url));
         const candidateEntries = [
-          path.resolve(currentDir, 'index.js'),
-          path.resolve(currentDir, '../index.js'),
-          path.resolve(currentDir, '../src/index.ts'),
+          path.resolve(currentDir, '../index.js'), // from dist/cli -> dist/index.js
+          path.resolve(currentDir, 'index.js'),    // from dist -> dist/index.js
+          path.resolve(currentDir, '../src/index.ts'), // from src/adapter -> src/index.ts
           path.resolve(currentDir, '../../dist/index.js'),
           path.resolve(currentDir, '../../src/index.ts'),
         ];
@@ -96,6 +96,7 @@ export class AdapterRegistry {
         for (const candidate of candidateEntries) {
           try {
             await fs.access(candidate);
+            if (candidate.endsWith(path.join('cli', 'index.js'))) continue;
             flowproofEntry = candidate;
             break;
           } catch {}
