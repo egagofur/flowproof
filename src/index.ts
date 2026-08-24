@@ -38,6 +38,7 @@ export * from './adapter/auth/session-auth.js';
 export * from './adapter/auth/token-auth.js';
 export * from './adapter/auth/oauth-auth.js';
 export * from './adapter/auth/browser-session-auth.js';
+export * from './adapter/auth/interactive-auth.js';
 
 // AI Intelligence
 export * from './ai/mapper/flow-mapper.js';
