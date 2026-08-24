@@ -125,6 +125,18 @@ export class AsideDriver {
           break;
         }
 
+        case 'press_key': {
+          const key = String(step.value || 'Enter');
+          trajectory.push(`Pressing key '${key}' on target ${step.target || 'page'}`);
+          if (step.target) {
+            const loc = await this.findSemanticElement(step.target, ['input', 'button']);
+            await loc.press(key);
+          } else {
+            await this.page.keyboard.press(key);
+          }
+          break;
+        }
+
         case 'wait': {
           const waitTime = typeof step.value === 'number' ? step.value : 1000;
           await this.page.waitForTimeout(waitTime);
