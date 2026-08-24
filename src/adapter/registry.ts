@@ -109,11 +109,21 @@ export class AdapterRegistry {
           format: 'esm',
           platform: 'node',
           target: 'es2022',
-          packages: 'external',
         };
 
         if (flowproofEntry) {
-          buildOptions.alias = { flowproof: flowproofEntry };
+          const flowproofFileUrl = `file://${flowproofEntry}`;
+          buildOptions.plugins = [
+            {
+              name: 'flowproof-resolver',
+              setup(b: any) {
+                b.onResolve({ filter: /^flowproof$/ }, () => ({
+                  path: flowproofFileUrl,
+                  external: true,
+                }));
+              },
+            },
+          ];
         }
 
         const res = await build(buildOptions);
