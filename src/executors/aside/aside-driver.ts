@@ -121,20 +121,16 @@ export class AsideDriver {
               `.ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
             ).first();
             if (await option.isVisible().catch(() => false)) {
-              await option.click({ force: true });
+              await option.click();
             } else {
               const firstOpt = activeDropdown.locator(
-                '.ant-select-item-option, [role="option"]'
+                '.ant-select-item-option, [role="option"], .ant-select-item'
               ).first();
               if (await firstOpt.isVisible().catch(() => false)) {
-                await firstOpt.click({ force: true });
+                await firstOpt.click();
               }
             }
             await this.page.waitForTimeout(400);
-            if (await activeDropdown.isVisible().catch(() => false)) {
-              await this.page.keyboard.press('Escape');
-              await this.page.waitForTimeout(300);
-            }
           }
           trajectory.push(`Selected option '${value}'`);
           break;
