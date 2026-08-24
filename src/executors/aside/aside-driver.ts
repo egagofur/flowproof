@@ -110,21 +110,22 @@ export class AsideDriver {
             await loc.selectOption(value, { timeout: 8000 });
           } else {
             await loc.click({ timeout: 8000 });
-            await this.page.waitForTimeout(500);
-            const option = this.page.locator(
-              `.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
+            await this.page.waitForTimeout(600);
+            const activeDropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').first();
+            const option = activeDropdown.locator(
+              `.ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
             ).first();
             if (await option.isVisible().catch(() => false)) {
               await option.click({ timeout: 5000 });
             } else {
-              const firstOpt = this.page.locator(
-                '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option, [role="option"]'
+              const firstOpt = activeDropdown.locator(
+                '.ant-select-item-option, [role="option"]'
               ).first();
               if (await firstOpt.isVisible().catch(() => false)) {
                 await firstOpt.click({ timeout: 5000 });
               }
             }
-            await this.page.waitForTimeout(300);
+            await this.page.waitForTimeout(500);
           }
           trajectory.push(`Selected option '${value}'`);
           break;
