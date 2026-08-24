@@ -15,6 +15,7 @@ export interface VerifyCommandOptions {
   affected?: boolean;
   priority?: string;
   executor?: string;
+  headed?: boolean;
   json?: boolean;
   reportMattermost?: boolean;
   config?: string;
@@ -104,6 +105,7 @@ export async function verifyCommand(options: VerifyCommandOptions): Promise<void
   for (const flow of targetFlows) {
     const res = await orchestrator.verifyFlow(flow, {
       executor: options.executor,
+      headless: options.headed ? false : config.options?.headless,
     });
 
     results.push(res);

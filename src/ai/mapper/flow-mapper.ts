@@ -114,58 +114,120 @@ export class FlowMapper {
     relativePath: string
   ): Promise<DiscoveredFlowCandidate[]> {
     const candidates: DiscoveredFlowCandidate[] = [];
-    const basename = path.basename(filePath, path.extname(filePath));
+    const normalized = relativePath.replace(/\\/g, '/');
 
-    // Exclude layout or internal files
-    if (basename.startsWith('_') || basename === 'layout' || basename === 'index') {
+    // Filter out non-route directories
+    if (
+      normalized.includes('/components/') ||
+      normalized.includes('/_components/') ||
+      normalized.includes('/providers/') ||
+      normalized.includes('/hooks/') ||
+      normalized.includes('/lib/') ||
+      normalized.includes('/utils/') ||
+      normalized.includes('/types/') ||
+      normalized.includes('/api/') ||
+      normalized.includes('layout.') ||
+      normalized.includes('error.') ||
+      normalized.includes('global-error.') ||
+      normalized.includes('not-found.') ||
+      normalized.includes('metadata.') ||
+      normalized.includes('robots.') ||
+      normalized.includes('sitemap.')
+    ) {
       return candidates;
     }
 
-    const flowId = `route.${basename.toLowerCase()}`;
+    let routePath = '';
+    let flowName = '';
+
+    // 1. Next.js App Router: .../app/(group)/path/page.tsx
+    if (normalized.includes('/app/') && path.basename(filePath).startsWith('page.')) {
+      const afterApp = normalized.split('/app/')[1] || '';
+      const dirOfPage = path.dirname(afterApp);
+      if (dirOfPage === '.' || dirOfPage === '') {
+        routePath = '/';
+        flowName = 'Homepage';
+      } else {
+        // Strip route groups like (public), (protected), (auth)
+        const cleanedSegments = dirOfPage
+          .split('/')
+          .filter((seg) => !seg.startsWith('(') || !seg.endsWith(')'));
+        routePath = '/' + cleanedSegments.join('/');
+        flowName = cleanedSegments
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '))
+          .join(' ');
+      }
+    }
+    // 2. Next.js Pages Router: .../pages/path.tsx
+    else if (normalized.includes('/pages/') && !path.basename(filePath).startsWith('_')) {
+      const afterPages = normalized.split('/pages/')[1] || '';
+      const withoutExt = afterPages.replace(/\.[^/.]+$/, '');
+      if (withoutExt === 'index') {
+        routePath = '/';
+        flowName = 'Homepage';
+      } else {
+        routePath = '/' + withoutExt.replace(/\/index$/, '');
+        flowName = withoutExt
+          .split('/')
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '))
+          .join(' ');
+      }
+    }
+
+    if (!routePath) {
+      return candidates;
+    }
+
+    const cleanId = routePath === '/' ? 'app.homepage' : `route.${routePath.slice(1).replace(/[\/\\]/g, '.')}`;
+    const isPublic = routePath === '/' || routePath.includes('login') || routePath.includes('sample') || routePath.includes('auth');
+
     const flowDef: FlowDefinition = {
-      id: flowId,
-      name: `Access ${basename} Page`,
-      description: `Discovered from route file ${relativePath}`,
-      priority: 'medium',
-      roles: ['user'],
-      tags: ['route', basename.toLowerCase()],
-      preconditions: [{ route: `/${basename.toLowerCase()}` }],
+      id: cleanId,
+      name: `Access ${flowName} Page`,
+      description: `Discovered from route ${routePath} in ${relativePath}`,
+      priority: routePath === '/' || routePath.includes('dashboard') || routePath.includes('login') ? 'critical' : 'high',
+      roles: isPublic ? ['guest', 'user'] : ['user'],
+      tags: ['route', ...routePath.split('/').filter(Boolean)],
+      preconditions: [
+        ...(isPublic ? [] : [{ authenticated_as: 'user' }]),
+        { route: routePath },
+      ],
       steps: [
         {
-          id: 'step-1',
+          id: 'step-navigate',
           action: 'navigate',
-          target: `/${basename.toLowerCase()}`,
-          description: `Navigate to /${basename.toLowerCase()}`,
+          target: routePath,
+          description: `Navigate to ${flowName} (${routePath})`,
         },
       ],
       assertions: [
         {
-          id: 'assert-1',
+          id: 'assert-rendered',
           type: 'element_visible',
           target: 'main, #root, #app, body',
-          description: `Verify /${basename.toLowerCase()} renders main container`,
+          description: `Verify ${flowName} renders main view`,
         },
       ],
       evidence: {
         checkpoints: [
           {
-            id: `route-${basename.toLowerCase()}-loaded`,
+            id: `${cleanId.replace(/\./g, '-')}-view`,
             trigger: 'after_step',
-            stepId: 'step-1',
+            stepId: 'step-navigate',
             screenshot: true,
-            description: `Page loaded for ${basename}`,
+            description: `${flowName} view loaded`,
           },
         ],
       },
       source: [relativePath],
-      confidence: 0.82,
+      confidence: 0.9,
     };
 
     candidates.push({
       flow: flowDef,
-      confidence: 0.82,
+      confidence: 0.9,
       sources: [relativePath],
-      rationale: `Derived route flow from page component ${relativePath}`,
+      rationale: `Discovered page route ${routePath} from ${relativePath}`,
     });
 
     return candidates;

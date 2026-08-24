@@ -46,6 +46,7 @@ export function createCli(): Command {
     .option('--affected', 'Verify only flows affected by recent git changes')
     .option('--priority <level>', 'Filter flows by priority (critical | high | medium | low)')
     .option('--executor <executor>', 'Override executor (playwright | aside | hybrid)')
+    .option('--headed', 'Run browser in headed (visible) mode')
     .option('--base-url <url>', 'Override target baseUrl')
     .option('--config <path>', 'Custom path to flowproof.config.ts')
     .option('--json', 'Output machine-readable JSON verification result')
