@@ -100,6 +100,33 @@ export class AsideDriver {
           break;
         }
 
+        case 'select': {
+          const semanticTarget = step.target || '';
+          const value = String(step.value ?? '');
+          trajectory.push(`Selecting option '${value}' on ${semanticTarget}`);
+          const loc = await this.findSemanticElement(semanticTarget, ['select', 'combobox', 'div']);
+          const tagName = await loc.evaluate((el) => el.tagName.toLowerCase()).catch(() => '');
+          if (tagName === 'select') {
+            await loc.selectOption(value, { timeout: 8000 });
+          } else {
+            await loc.click({ timeout: 8000 });
+            await this.page.waitForTimeout(400);
+            const option = this.page.locator(
+              `.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
+            ).first();
+            if (await option.isVisible().catch(() => false)) {
+              await option.click({ timeout: 5000 });
+            } else {
+              const firstOpt = this.page.locator(
+                '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option, [role="option"]'
+              ).first();
+              await firstOpt.click({ timeout: 5000 });
+            }
+          }
+          trajectory.push(`Selected option '${value}'`);
+          break;
+        }
+
         case 'select_date': {
           const semanticTarget = step.target || '';
           const tomorrow = new Date();
