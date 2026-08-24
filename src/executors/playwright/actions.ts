@@ -100,11 +100,29 @@ export class PlaywrightActionRunner {
         if (step.target) {
           const locator = this.resolveLocator(page, step.target);
           await locator.waitFor({ state: 'visible', timeout });
-          await locator.click({ timeout });
+          
+          const tagName = await locator.evaluate((el) => el.tagName.toLowerCase()).catch(() => '');
+          if (tagName === 'form') {
+            const submitBtn = locator.locator('button[type="submit"], button, input[type="submit"]').first();
+            if (await submitBtn.isVisible().catch(() => false)) {
+              await submitBtn.click({ timeout });
+            } else {
+              const input = locator.locator('input').first();
+              if (await input.isVisible().catch(() => false)) {
+                await input.press('Enter');
+              } else {
+                await page.keyboard.press('Enter');
+              }
+            }
+          } else if (tagName === 'input') {
+            await locator.press('Enter');
+          } else {
+            await locator.click({ timeout });
+          }
         } else {
           // Fallback: press Enter or click submit button on page
           const submitBtn = page.locator('button[type="submit"], input[type="submit"]').first();
-          if (await submitBtn.isVisible()) {
+          if (await submitBtn.isVisible().catch(() => false)) {
             await submitBtn.click({ timeout });
           } else {
             await page.keyboard.press('Enter');
