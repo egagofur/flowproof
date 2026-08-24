@@ -24,7 +24,7 @@ export interface RecordFlowOptions {
 }
 
 export class FlowRecorder {
-  constructor(private config: FlowproofConfig) {}
+  constructor(private config: FlowproofConfig) { }
 
   /**
    * Start an interactive recording session in the browser.
@@ -47,7 +47,7 @@ export class FlowRecorder {
         try {
           const content = await fs.readFile(p, 'utf-8');
           storageState = JSON.parse(content);
-        } catch {}
+        } catch { }
       }
     }
 
@@ -262,7 +262,7 @@ export class FlowRecorder {
       if (page.isClosed()) break;
     }
 
-    await browser.close().catch(() => {});
+    await browser.close().catch(() => { });
 
     console.log(pc.cyan(`\n🎬 [Flowproof Recorder] Recording ended. Processing ${recordedActions.length} recorded actions...`));
 
@@ -324,14 +324,14 @@ export class FlowRecorder {
           },
           ...(steps.length > 1
             ? [
-                {
-                  id: 'final-action-proof',
-                  trigger: 'after_step' as const,
-                  stepId: steps[steps.length - 1].id,
-                  screenshot: true,
-                  description: '[AUTOMATION-PROOF] Final state after recorded actions',
-                },
-              ]
+              {
+                id: 'final-action-proof',
+                trigger: 'after_step' as const,
+                stepId: steps[steps.length - 1].id,
+                screenshot: true,
+                description: '[AUTOMATION-PROOF] Final state after recorded actions',
+              },
+            ]
             : []),
         ],
       },
@@ -339,7 +339,8 @@ export class FlowRecorder {
 
     // Save YAML
     const flowsDir = this.config.flowsDir || './flows';
-    const targetFile = options.outputPath || path.join(process.cwd(), flowsDir, `${flowId.replace(/\./g, '-')}.yaml`);
+    const targetDir = path.isAbsolute(flowsDir) ? flowsDir : path.join(process.cwd(), flowsDir);
+    const targetFile = options.outputPath || path.join(targetDir, `${flowId.replace(/\./g, '-')}.yaml`);
     await fs.mkdir(path.dirname(targetFile), { recursive: true });
     const yamlString = YAML.stringify(flowDefinition);
     await fs.writeFile(targetFile, yamlString, 'utf-8');
