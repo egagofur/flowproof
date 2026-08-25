@@ -168,7 +168,7 @@ Flowproof decouples the **what** (flow contract) from the **how** (browser execu
 Flow contracts are clean, human-readable YAML documents stored in `./flows/`:
 
 ```yaml
-id: pama.master-data.create-fiscal-year
+id: erp.master-data.create-fiscal-year
 name: "[AUTOMATION] Master Data: Create & Save Fiscal Year"
 description: Navigates to Master Data, selects Year, Position, District, Period Type, and submits.
 priority: critical
