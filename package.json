@@ -1,8 +1,11 @@
 {
-  "name": "flowproof",
+  "name": "@egagofur/flowproof",
   "version": "0.1.0",
   "description": "AI-driven E2E verification orchestrator & interactive browser flow recorder for Playwright & Aside",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

@@ -7,7 +7,7 @@
 > **"Don't just test the code. Prove the user flow."**
 
 [![CI Status](https://github.com/egagofur/flowproof/actions/workflows/ci.yml/badge.svg)](https://github.com/egagofur/flowproof/actions)
-[![NPM Version](https://img.shields.io/npm/v/flowproof.svg?style=flat&color=blue)](https://www.npmjs.com/package/flowproof)
+[![NPM Version](https://img.shields.io/npm/v/@egagofur/flowproof.svg?style=flat&color=blue)](https://www.npmjs.com/package/@egagofur/flowproof)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Supported-2EAD33.svg?logo=playwright&logoColor=white)](https://playwright.dev/)
@@ -64,11 +64,13 @@ Modern web applications are complex, and traditional E2E tests are notoriously *
 Install Flowproof globally or as a dev dependency in your project:
 
 ```bash
-# Global CLI installation (Recommended)
-npm install -g flowproof
+# Global CLI installation via GitHub (or NPM):
+npm install -g github:egagofur/flowproof
+# or via NPM:
+npm install -g @egagofur/flowproof
 
-# Or install as dev dependency:
-pnpm add -D flowproof playwright
+# Or install as dev dependency in your project:
+pnpm add -D github:egagofur/flowproof playwright
 npx playwright install chromium
 ```
 
