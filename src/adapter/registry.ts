@@ -109,6 +109,7 @@ export class AdapterRegistry {
           format: 'esm',
           platform: 'node',
           target: 'es2022',
+          packages: 'external',
         };
 
         if (flowproofEntry) {

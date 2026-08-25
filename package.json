@@ -1,7 +1,7 @@
 {
   "name": "flowproof",
   "version": "0.1.0",
-  "description": "AI-driven E2E verification orchestrator for software development workflows",
+  "description": "AI-driven E2E verification orchestrator & interactive browser flow recorder for Playwright & Aside",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,18 +16,34 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/egagofur/flowproof.git"
+  },
+  "homepage": "https://github.com/egagofur/flowproof#readme",
+  "bugs": {
+    "url": "https://github.com/egagofur/flowproof/issues"
+  },
   "keywords": [
     "e2e",
     "testing",
-    "verification",
-    "orchestrator",
     "playwright",
     "aside",
     "ai-agent",
-    "flow-mapping",
+    "ai-testing",
+    "browser-automation",
+    "visual-regression",
+    "flow-verification",
+    "e2e-testing",
+    "test-recorder",
+    "qa",
+    "nextjs",
+    "vite",
+    "self-healing",
+    "orchestrator",
     "evidence"
   ],
-  "author": "",
+  "author": "Ega Gofur <egagofurtriwahana@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "commander": "^12.1.0",
