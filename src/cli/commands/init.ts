@@ -23,14 +23,14 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
   const analysis = await ProjectDetector.analyze(projectDir);
   const baseUrl = options.baseUrl || analysis.suggestedBaseUrl;
 
-  const configPath = path.join(projectDir, 'flowproof.config.ts');
+  const configPath = path.join(projectDir, 'intentproof.config.ts');
   const flowsDir = path.join(projectDir, 'flows');
 
   if (analysis.hasFlowproofConfig && !options.force) {
     if (options.json) {
-      console.log(JSON.stringify({ error: 'Project already contains a flowproof configuration. Use --force to overwrite.' }, null, 2));
+      console.log(JSON.stringify({ error: 'Project already contains an Intentproof configuration. Use --force to overwrite.' }, null, 2));
     } else {
-      console.log(pc.yellow(`Flowproof configuration already exists in ${projectDir}. Use --force to overwrite.`));
+      console.log(pc.yellow(`Intentproof configuration already exists in ${projectDir}. Use --force to overwrite.`));
     }
     return;
   }

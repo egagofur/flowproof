@@ -1,5 +1,5 @@
 export function generateGenericConfig(baseUrl = 'http://localhost:3000'): string {
-  return `import { defineConfig, PasswordAuthStrategy } from 'flowproof';
+  return `import { defineConfig, PasswordAuthStrategy } from 'intentproof';
 
 export default defineConfig({
   baseUrl: process.env.APP_BASE_URL || '${baseUrl}',

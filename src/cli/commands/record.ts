@@ -13,7 +13,7 @@ export function createRecordCommand(): Command {
     .option('-u, --url <url>', 'Starting URL or path for recording', '/')
     .option('-r, --role <role>', 'Role to authenticate as before recording', 'user')
     .option('-o, --output <path>', 'Custom path to write the YAML flow definition')
-    .option('-c, --config <path>', 'Path to flowproof.config.ts')
+    .option('-c, --config <path>', 'Path to intentproof.config.ts')
     .action(async (options) => {
       try {
         const config = await AdapterRegistry.loadConfig(process.cwd(), options.config);
@@ -27,7 +27,7 @@ export function createRecordCommand(): Command {
           role: options.role,
         });
       } catch (err: any) {
-        console.error(pc.red(`\n❌ [Flowproof Record Error] ${err.message}\n`));
+        console.error(pc.red(`\n❌ [Intentproof Record Error] ${err.message}\n`));
         process.exit(1);
       }
     });

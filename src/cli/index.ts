@@ -12,15 +12,15 @@ export function createCli(): Command {
   const program = new Command();
 
   program
-    .name('flowproof')
-    .description('AI-driven E2E verification orchestrator — Prove the user flow.')
+    .name('intentproof')
+    .description('AI-driven E2E verification orchestrator — Prove the user intent.')
     .version('0.1.0');
 
   program.addCommand(createRecordCommand());
 
   program
     .command('init')
-    .description('Initialize Flowproof in the current repository with auto-detected config and starter flows')
+    .description('Initialize Intentproof in the current repository with auto-detected config and starter flows')
     .option('--dir <dir>', 'Target project directory')
     .option('--base-url <url>', 'Override application base URL')
     .option('--force', 'Overwrite existing configuration')
@@ -38,7 +38,7 @@ export function createCli(): Command {
   program
     .command('flows')
     .description('List registered flow contracts and their statuses')
-    .option('--config <path>', 'Custom path to flowproof.config.ts')
+    .option('--config <path>', 'Custom path to intentproof.config.ts')
     .option('--json', 'Output machine-readable JSON')
     .action(flowsCommand);
 
@@ -51,7 +51,7 @@ export function createCli(): Command {
     .option('--executor <executor>', 'Override executor (playwright | aside | hybrid)')
     .option('--headed', 'Run browser in headed (visible) mode')
     .option('--base-url <url>', 'Override target baseUrl')
-    .option('--config <path>', 'Custom path to flowproof.config.ts')
+    .option('--config <path>', 'Custom path to intentproof.config.ts')
     .option('--json', 'Output machine-readable JSON verification result')
     .option('--report-mattermost', 'Output formatted Mattermost report markdown')
     .action(verifyCommand);

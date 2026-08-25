@@ -13,7 +13,7 @@ export class MattermostReporter {
           ? ':no_entry: **BLOCKED**'
           : ':x: **FAILED**';
 
-    let msg = `### Flowproof Verification Report\n\n`;
+    let msg = `### Intentproof Verification Report\n\n`;
     msg += `**Status:** ${statusEmoji}\n`;
     msg += `**Flow:** ${result.flowName} (\`${result.flowId}\`)\n`;
     msg += `**Duration:** ${(result.durationMs / 1000).toFixed(2)}s\n`;

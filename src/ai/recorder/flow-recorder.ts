@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import YAML from 'yaml';
 import pc from 'picocolors';
 import { FlowDefinition, FlowStep } from '../../core/contracts/flow.js';
-import { FlowproofConfig } from '../../adapter/config.js';
+import { IntentproofConfig } from '../../adapter/config.js';
 
 export interface RecordedAction {
   type: 'navigate' | 'click' | 'fill' | 'select' | 'press_key' | 'submit';
@@ -24,7 +24,7 @@ export interface RecordFlowOptions {
 }
 
 export class FlowRecorder {
-  constructor(private config: FlowproofConfig) { }
+  constructor(private config: IntentproofConfig) { }
 
   /**
    * Start an interactive recording session in the browser.
@@ -51,7 +51,7 @@ export class FlowRecorder {
       }
     }
 
-    console.log(pc.cyan(`\n🎥 [Flowproof Recorder] Launching browser recording session...`));
+    console.log(pc.cyan(`\n🎥 [Intentproof Recorder] Launching browser recording session...`));
     console.log(pc.dim(`   Base URL: ${baseUrl}`));
     console.log(pc.dim(`   Target URL: ${startUrl}`));
     console.log(pc.yellow(`   💡 Interact with the application. Click 'Finish & Generate YAML' in the floating banner or close the browser when done.\n`));
@@ -258,7 +258,7 @@ export class FlowRecorder {
         hud.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="width:10px;height:10px;border-radius:50%;background-color:#ef4444;display:inline-block;animation:pulse 1.5s infinite;"></span>
-            <strong>Flowproof Recording</strong>
+            <strong>Intentproof Recording</strong>
           </div>
           <button id="flowproof-btn-finish" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">
             Finish & Save YAML
@@ -289,7 +289,7 @@ export class FlowRecorder {
 
     await browser.close().catch(() => { });
 
-    console.log(pc.cyan(`\n🎬 [Flowproof Recorder] Recording ended. Processing ${recordedActions.length} recorded actions...`));
+    console.log(pc.cyan(`\n🎬 [Intentproof Recorder] Recording ended. Processing ${recordedActions.length} recorded actions...`));
 
     // Synthesize into FlowDefinition
     const flowId = options.flowId || `recorded.flow.${Date.now()}`;
@@ -370,10 +370,10 @@ export class FlowRecorder {
     const yamlString = YAML.stringify(flowDefinition);
     await fs.writeFile(targetFile, yamlString, 'utf-8');
 
-    console.log(pc.green(`\n✨ [Flowproof Recorder] Successfully generated YAML contract!`));
+    console.log(pc.green(`\n✨ [Intentproof Recorder] Successfully generated YAML contract!`));
     console.log(pc.white(`   📄 Saved to: ${targetFile}`));
     console.log(pc.cyan(`\n   To verify immediately, run:`));
-    console.log(pc.yellow(`   flowproof verify --flow ${flowId} --executor aside\n`));
+    console.log(pc.yellow(`   intentproof verify --flow ${flowId} --executor aside\n`));
 
     return flowDefinition;
   }

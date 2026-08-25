@@ -1,5 +1,5 @@
 export function generateNextjsConfig(baseUrl = 'http://localhost:3000'): string {
-  return `import { defineConfig, SessionAuthStrategy, PasswordAuthStrategy } from 'flowproof';
+  return `import { defineConfig, SessionAuthStrategy, PasswordAuthStrategy } from 'intentproof';
 
 export default defineConfig({
   baseUrl: process.env.APP_BASE_URL || '${baseUrl}',

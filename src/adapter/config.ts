@@ -26,6 +26,7 @@ export interface ProjectConfig {
   hooks?: ProjectHooks;
 }
 
+export type IntentproofConfig = ProjectConfig;
 export type FlowproofConfig = ProjectConfig;
 
 export function defineConfig(config: ProjectConfig): ProjectConfig {

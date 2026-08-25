@@ -5,11 +5,11 @@ import os from 'node:os';
 import { initCommand } from '../../src/cli/commands/init.js';
 import { FlowLoader } from '../../src/core/parser/flow-loader.js';
 
-describe('flowproof init', () => {
+describe('intentproof init', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'flowproof-init-test-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'intentproof-init-test-'));
   });
 
   afterEach(async () => {
@@ -19,8 +19,8 @@ describe('flowproof init', () => {
   it('should initialize a fresh project with config, starter flow, and .gitignore', async () => {
     await initCommand({ dir: tmpDir, baseUrl: 'http://localhost:4000' });
 
-    // Check flowproof.config.ts
-    const configPath = path.join(tmpDir, 'flowproof.config.ts');
+    // Check intentproof.config.ts
+    const configPath = path.join(tmpDir, 'intentproof.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
     expect(configContent).toContain("http://localhost:4000");
     expect(configContent).toContain("defineConfig");
@@ -51,7 +51,7 @@ describe('flowproof init', () => {
 
     await initCommand({ dir: tmpDir });
 
-    const configContent = await fs.readFile(path.join(tmpDir, 'flowproof.config.ts'), 'utf-8');
+    const configContent = await fs.readFile(path.join(tmpDir, 'intentproof.config.ts'), 'utf-8');
     expect(configContent).toContain('SessionAuthStrategy');
     expect(configContent).toContain('3000');
   });

@@ -43,9 +43,14 @@ export class ProjectDetector {
 
     let hasFlowproofConfig = false;
     const configCandidates = [
+      'intentproof.config.ts',
+      'intentproof.config.js',
+      'intentproof.config.mjs',
+      'intentproof.config.json',
       'flowproof.config.ts',
       'flowproof.config.js',
       'flowproof.config.json',
+      path.join('intentproof', 'config.ts'),
       path.join('flowproof', 'config.ts'),
     ];
 

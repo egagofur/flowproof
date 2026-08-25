@@ -26,7 +26,7 @@ describe('Hybrid Executor & Aside Adaptive Fallback', () => {
   });
 
   it('should adaptively verify flow using Aside executor directly', async () => {
-    const config = await AdapterRegistry.loadConfig(exampleAppDir, 'flowproof.config.ts');
+    const config = await AdapterRegistry.loadConfig(exampleAppDir, 'intentproof.config.ts');
     config.baseUrl = serverHandle.url;
     config.defaultExecutor = 'aside';
 

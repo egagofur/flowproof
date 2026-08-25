@@ -1,13 +1,13 @@
 <div align="center">
 
-# 🌊🛡️ Flowproof
+# 🎯🛡️ Intentproof
 
-### **AI-Driven E2E Verification & Interactive Browser Flow Orchestrator**
+### **AI-Driven E2E Verification Orchestrator & Interactive Browser Recorder**
 
-> **"Don't just test the code. Prove the user flow."**
+> **"Don't just test the code. Prove the user intent."**
 
-[![CI Status](https://github.com/egagofur/flowproof/actions/workflows/ci.yml/badge.svg)](https://github.com/egagofur/flowproof/actions)
-[![NPM Version](https://img.shields.io/npm/v/@egagofur/flowproof.svg?style=flat&color=blue)](https://www.npmjs.com/package/@egagofur/flowproof)
+[![CI Status](https://github.com/egagofur/intentproof/actions/workflows/ci.yml/badge.svg)](https://github.com/egagofur/intentproof/actions)
+[![NPM Version](https://img.shields.io/npm/v/intentproof.svg?style=flat&color=blue)](https://www.npmjs.com/package/intentproof)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Supported-2EAD33.svg?logo=playwright&logoColor=white)](https://playwright.dev/)
@@ -16,7 +16,7 @@
 <p align="center">
   <a href="#-key-features">Key Features</a> •
   <a href="#-quick-start-in-60-seconds">Quick Start</a> •
-  <a href="#-interactive-recording-flowproof-record">Interactive Recording</a> •
+  <a href="#-interactive-recording-intentproof-record">Interactive Recording</a> •
   <a href="#-executors-playwright-aside--hybrid">Executors</a> •
   <a href="#-declarative-flow-contract">Flow Contract</a> •
   <a href="#-ai-diagnostic-engine">AI Diagnostics</a> •
@@ -28,16 +28,16 @@
 
 ---
 
-## 💡 What is Flowproof?
+## 💡 What is Intentproof?
 
 Modern web applications are complex, and traditional E2E tests are notoriously **brittle, time-consuming to write, and hard to maintain** when CSS classes or UI frameworks change.
 
-**Flowproof** re-imagines end-to-end testing as a **declarative, proof-driven verification system**. Instead of maintaining brittle test scripts with hardcoded selectors, Flowproof lets you:
-1. 🔴 **Record User Flows Visually (`flowproof record`)**: Click and fill forms directly in your real browser; Flowproof automatically captures smart semantic selectors, network mutations, and generates clean YAML contracts.
+**Intentproof** re-imagines end-to-end testing as a **declarative, proof-driven verification system**. Instead of maintaining brittle test scripts with hardcoded selectors, Intentproof lets you:
+1. 🔴 **Record User Flows Visually (`intentproof record`)**: Click and fill forms directly in your real browser; Intentproof automatically captures smart semantic selectors, network mutations, and generates clean YAML contracts.
 2. 🤖 **Execute with Multiple Engines**: Choose fast deterministic **Playwright**, resilient **Aside AI Agent**, or **Hybrid Mode** with automatic self-healing fallback.
-3. 🔐 **Authenticate Once (`InteractiveBrowserAuth`)**: Log in manually once through Google OAuth, SSO, or MFA; Flowproof securely persists your session for all future automated runs.
+3. 🔐 **Authenticate Once (`InteractiveBrowserAuth`)**: Log in manually once through Google OAuth, SSO, or MFA; Intentproof securely persists your session for all future automated runs.
 4. 📷 **Produce Audit-Ready Evidence**: Collect visual screenshot proofs at defined checkpoints, Playwright traces (`trace.zip`), and structured Markdown summaries.
-5. 🧠 **AI Root-Cause Diagnosis (`flowproof inspect`)**: Automatically analyze why a test failed, pinpointing whether it was an **application regression**, **stale selector**, or **environment blip**.
+5. 🧠 **AI Root-Cause Diagnosis (`intentproof inspect`)**: Automatically analyze why a test failed, pinpointing whether it was an **application regression**, **stale selector**, or **environment blip**.
 
 ---
 
@@ -45,14 +45,14 @@ Modern web applications are complex, and traditional E2E tests are notoriously *
 
 | Feature | Description |
 | :--- | :--- |
-| 🔴 **Interactive Flow Recorder** | Just browse and interact with your app; Flowproof synthesizes full YAML contracts automatically. |
+| 🔴 **Interactive Flow Recorder** | Just browse and interact with your app; Intentproof synthesizes full YAML contracts automatically. |
 | ⚡ **Playwright Engine** | Blazing-fast, deterministic execution for continuous integration and regression testing. |
 | 🧠 **Aside AI Agentic Engine** | Natural language, goal-oriented browser automation that doesn't break when CSS selectors change. |
 | 🔄 **Hybrid Self-Healing Mode** | Runs Playwright first; if a selector drifts, automatically falls back to Aside to verify if the business intent still works. |
 | 🔐 **Interactive Universal Auth** | Built-in stealth Chrome mode that bypasses bot detection for Google OAuth, MFA, and SSO logins. |
 | 📸 **First-Class Evidence Proof** | Captures screenshot checkpoints, traces, and execution timelines in organized artifact directories. |
-| 🧭 **Automatic Route Discovery** | `flowproof discover` scans Next.js, Vite, React, and Vue routes to scaffold candidate flow contracts. |
-| 🎯 **Change Impact Analysis** | `flowproof verify --affected` reads Git diffs to run only flows impacted by recent code changes. |
+| 🧭 **Automatic Route Discovery** | `intentproof discover` scans Next.js, Vite, React, and Vue routes to scaffold candidate flow contracts. |
+| 🎯 **Change Impact Analysis** | `intentproof verify --affected` reads Git diffs to run only flows impacted by recent code changes. |
 | 💬 **Mattermost & Chat Reporting** | Instant formatted markdown summaries ready for Mattermost, Slack, or PR comments. |
 
 ---
@@ -61,16 +61,16 @@ Modern web applications are complex, and traditional E2E tests are notoriously *
 
 ### 1. Installation
 
-Install Flowproof globally or as a dev dependency in your project:
+Install Intentproof globally or as a dev dependency in your project:
 
 ```bash
 # Global CLI installation via GitHub (or NPM):
-npm install -g github:egagofur/flowproof
+npm install -g github:egagofur/intentproof
 # or via NPM:
-npm install -g @egagofur/flowproof
+npm install -g intentproof
 
 # Or install as dev dependency in your project:
-pnpm add -D github:egagofur/flowproof playwright
+pnpm add -D github:egagofur/intentproof playwright
 npx playwright install chromium
 ```
 
@@ -78,32 +78,32 @@ npx playwright install chromium
 
 ### 2. Initialize in Any Web Application
 
-Run `flowproof init` in your project root (Next.js, Vite, React, Vue, Svelte, or Remix):
+Run `intentproof init` in your project root (Next.js, Vite, React, Vue, Svelte, or Remix):
 
 ```bash
-flowproof init
+intentproof init
 ```
 
 This automatically:
 - Detects your framework and local dev port (e.g. Next.js `3000`, Vite `5173`).
-- Generates `flowproof.config.ts` with recommended authentication strategies.
+- Generates `intentproof.config.ts` with recommended authentication strategies.
 - Creates the `./flows` directory for declarative contracts.
 - Configures `./artifacts` in `.gitignore`.
 
 ---
 
-### 3. Record a User Flow Interactively (`flowproof record`)
+### 3. Record a User Flow Interactively (`intentproof record`)
 
 No need to write YAML by hand! Simply start the interactive recorder:
 
 ```bash
-flowproof record --flow app.user.create-item --url /dashboard/items/create
+intentproof record --flow app.user.create-item --url /dashboard/items/create
 ```
 
 1. A real browser opens with your active session.
 2. Fill the inputs, select dropdowns, pick dates, and click **Submit**.
 3. Click the floating **`Finish & Save YAML`** button in the browser.
-4. Flowproof instantly generates `./flows/app-user-create-item.yaml`!
+4. Intentproof instantly generates `./flows/app-user-create-item.yaml`!
 
 ---
 
@@ -113,26 +113,26 @@ Run the verification orchestrator:
 
 ```bash
 # Run with Aside Agentic Executor:
-flowproof verify --flow app.user.create-item --executor aside
+intentproof verify --flow app.user.create-item --executor aside
 
 # Or run with fast Playwright:
-flowproof verify --flow app.user.create-item --executor playwright
+intentproof verify --flow app.user.create-item --executor playwright
 
 # Or run in Self-Healing Hybrid Mode:
-flowproof verify --flow app.user.create-item --executor hybrid
+intentproof verify --flow app.user.create-item --executor hybrid
 ```
 
 ---
 
-## 🖥️ Interactive Recording (`flowproof record`)
+## 🖥️ Interactive Recording (`intentproof record`)
 
-The **Flowproof Recorder** watches real user interactions, extracts smart accessibility selectors, and outputs clean declarative YAML:
+The **Intentproof Recorder** watches real user interactions, extracts smart accessibility selectors, and outputs clean declarative YAML:
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│                    FLOWPROOF RECORDER                      │
+│                    INTENTPROOF RECORDER                    │
 │                                                            │
-│ 1. Run: flowproof record --url /checkout                   │
+│ 1. Run: intentproof record --url /checkout                 │
 │ 2. Real browser opens with your authenticated session      │
 │ 3. You click items, fill inputs, and submit                │
 │ 4. Click [Finish & Save YAML] on floating in-browser HUD   │
@@ -144,7 +144,7 @@ The **Flowproof Recorder** watches real user interactions, extracts smart access
 
 ## 🤖 Executors: Playwright, Aside & Hybrid
 
-Flowproof decouples the **what** (flow contract) from the **how** (browser executor):
+Intentproof decouples the **what** (flow contract) from the **how** (browser executor):
 
 ```
                        [ Flow Definition (YAML) ]
@@ -160,7 +160,7 @@ Flowproof decouples the **what** (flow contract) from the **how** (browser execu
 ```
 
 * **Playwright (`--executor playwright`)**: Highly optimized for deterministic assertions and maximum speed.
-* **Aside (`--executor aside`)**: Evaluates semantic intent (e.g. *"Click Yes Continue button"* or *"Select active fiscal year"*), navigating complex UI libraries (Ant Design, Radix, Tailwind Headless UI) without brittle CSS selectors.
+* **Aside (`--executor aside`)**: Evaluates semantic intent (e.g. *"Click Save button"* or *"Select active item"*), navigating complex UI libraries (Ant Design, Radix, Tailwind Headless UI) without brittle CSS selectors.
 * **Hybrid (`--executor hybrid`)**: Runs Playwright; if a selector changed due to UI refactoring, Aside kicks in to diagnose if the user flow still succeeds.
 
 ---
@@ -239,17 +239,17 @@ evidence:
 
 ## 🧠 AI Diagnostic Engine
 
-When a flow fails, Flowproof doesn't just output a stack trace. The **AI Diagnostic Engine** classifies the failure into 4 actionable root causes:
+When a flow fails, Intentproof doesn't just output a stack trace. The **AI Diagnostic Engine** classifies the failure into 4 actionable root causes:
 
 1. **`application_regression`**: The flow failed because the application logic broke.
-2. **`stale_selector`**: The UI still works, but a CSS class or button label changed (Flowproof proposes a YAML patch!).
+2. **`stale_selector`**: The UI still works, but a CSS class or button label changed (Intentproof proposes a YAML patch!).
 3. **`auth_failure`**: Session expired or login credentials invalid.
 4. **`environment_issue`**: Target backend/server unreachable or timed out.
 
 Inspect any execution:
 
 ```bash
-flowproof inspect <executionId>
+intentproof inspect <executionId>
 ```
 
 ```text
@@ -263,10 +263,10 @@ AI Diagnostic Analysis:
 
 ## 🔐 Universal Authentication Strategies
 
-Flowproof comes with built-in strategies for every auth mechanism:
+Intentproof comes with built-in strategies for every auth mechanism:
 
 ```typescript
-import { defineConfig, InteractiveBrowserAuthStrategy } from 'flowproof';
+import { defineConfig, InteractiveBrowserAuthStrategy } from 'intentproof';
 
 export default defineConfig({
   baseUrl: process.env.APP_BASE_URL || 'https://app.example.com',
@@ -288,10 +288,10 @@ export default defineConfig({
 
 ### GitHub Actions Workflow
 
-Add `.github/workflows/flowproof.yml` to your repository:
+Add `.github/workflows/intentproof.yml` to your repository:
 
 ```yaml
-name: E2E Flowproof Verification
+name: E2E Intentproof Verification
 
 on:
   push:
@@ -310,16 +310,16 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install -g flowproof && npx playwright install chromium
+        run: npm install -g intentproof && npx playwright install chromium
 
       - name: Verify Impacted Flows
-        run: flowproof verify --affected --executor playwright
+        run: intentproof verify --affected --executor playwright
 
       - name: Upload Visual Evidence Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flowproof-evidence
+          name: intentproof-evidence
           path: artifacts/
 ```
 
@@ -329,14 +329,14 @@ jobs:
 
 | Command | Description |
 | :--- | :--- |
-| `flowproof init` | Initialize Flowproof with auto-detected configuration and templates. |
-| `flowproof record [options]` | Interactively record browser interactions and output clean YAML contracts. |
-| `flowproof verify [options]` | Execute verification for registered flows and generate visual proof evidence. |
-| `flowproof discover` | Discover candidate flows from frontend routes and source files. |
-| `flowproof flows` | List registered flows, priority levels, roles, and tags. |
-| `flowproof inspect <id>` | Inspect AI diagnostic analysis and root cause classifications. |
-| `flowproof evidence <id>` | List and inspect visual screenshots and Playwright traces. |
-| `flowproof prune` | Clean up old execution runs according to the retention policy. |
+| `intentproof init` | Initialize Intentproof with auto-detected configuration and templates. |
+| `intentproof record [options]` | Interactively record browser interactions and output clean YAML contracts. |
+| `intentproof verify [options]` | Execute verification for registered flows and generate visual proof evidence. |
+| `intentproof discover` | Discover candidate flows from frontend routes and source files. |
+| `intentproof flows` | List registered flows, priority levels, roles, and tags. |
+| `intentproof inspect <id>` | Inspect AI diagnostic analysis and root cause classifications. |
+| `intentproof evidence <id>` | List and inspect visual screenshots and Playwright traces. |
+| `intentproof prune` | Clean up old execution runs according to the retention policy. |
 
 ---
 
@@ -348,7 +348,7 @@ We love contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) to lea
 
 ## 📄 License
 
-Flowproof is open-source software licensed under the **[MIT License](LICENSE)**.
+Intentproof is open-source software licensed under the **[MIT License](LICENSE)**.
 
 ---
 

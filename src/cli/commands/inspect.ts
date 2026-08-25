@@ -25,7 +25,7 @@ export async function inspectCommand(executionId: string, options: InspectComman
       return;
     }
 
-    console.log(pc.bold(`\nFlowproof Inspection: ${result.executionId}`));
+    console.log(pc.bold(`\nIntentproof Inspection: ${result.executionId}`));
     console.log(pc.dim('────────────────────────────────────────'));
     console.log(`Flow:       ${pc.bold(result.flowName)} (${result.flowId})`);
     console.log(`Status:     ${result.status === 'PROVEN' ? pc.green(result.status) : pc.red(result.status)}`);

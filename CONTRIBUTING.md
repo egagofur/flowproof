@@ -1,6 +1,6 @@
-# Contributing to Flowproof 🌊🛡️
+# Contributing to Intentproof 🎯🛡️
 
-Thank you for your interest in contributing to **Flowproof**! Flowproof is built to give engineering teams high-confidence user flow verification with visual evidence and AI diagnostics.
+Thank you for your interest in contributing to **Intentproof**! Intentproof is built to give engineering teams high-confidence user intent verification with visual evidence and AI diagnostics.
 
 We welcome contributions of all kinds: bug reports, new executors, auth strategies, AI mappers, framework templates, and documentation improvements!
 
@@ -16,8 +16,8 @@ We welcome contributions of all kinds: bug reports, new executors, auth strategi
 ### 2. Clone and Install
 
 ```bash
-git clone https://github.com/egagofur/flowproof.git
-cd flowproof
+git clone https://github.com/egagofur/intentproof.git
+cd intentproof
 pnpm install
 npx playwright install chromium
 ```
@@ -42,23 +42,23 @@ npm link
 
 ## 🧱 Architecture Overview
 
-Flowproof follows a clean modular architecture:
+Intentproof follows a clean modular architecture:
 - `src/core`: Contracts, Schemas (Zod), Execution Context, Artifact Store, Evidence Manager, and Flow Orchestrator.
 - `src/executors`: Pluggable execution engines (`PlaywrightExecutor`, `AsideExecutor`, `HybridExecutor`).
 - `src/adapter`: Framework detectors, dynamic config loaders, and auth strategies (`InteractiveBrowserAuthStrategy`, `SessionAuth`, etc.).
 - `src/ai`:
-  - `recorder`: Interactive in-browser action recording and YAML synthesis (`flowproof record`).
-  - `mapper`: Automatic route/component to flow contract discovery (`flowproof discover`).
+  - `recorder`: Interactive in-browser action recording and YAML synthesis (`intentproof record`).
+  - `mapper`: Automatic route/component to flow contract discovery (`intentproof discover`).
   - `analyzer`: AI diagnostic classifier (app regression vs stale selector vs auth failure).
   - `stale`: UI drift detection and patch generation.
-  - `impact`: Git diff change impact analysis (`flowproof verify --affected`).
+  - `impact`: Git diff change impact analysis (`intentproof verify --affected`).
 - `src/cli`: Commander-based CLI commands (`init`, `record`, `verify`, `discover`, `flows`, `inspect`, `evidence`, `prune`).
 
 ---
 
 ## 🌿 How to Submit a Pull Request
 
-1. **Fork** the repository on GitHub: `https://github.com/egagofur/flowproof`.
+1. **Fork** the repository on GitHub: `https://github.com/egagofur/intentproof`.
 2. Create a feature branch: `git checkout -b feat/my-awesome-feature`.
 3. Ensure all tests pass and code compiles: `pnpm build && pnpm test`.
 4. Commit your changes with clear conventional commit messages: `feat: add support for SvelteKit detector`.
@@ -68,7 +68,7 @@ Flowproof follows a clean modular architecture:
 
 ## 💬 Community & Questions
 
-- **Issues & Bug Reports**: [GitHub Issues](https://github.com/egagofur/flowproof/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/egagofur/flowproof/discussions)
+- **Issues & Bug Reports**: [GitHub Issues](https://github.com/egagofur/intentproof/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/egagofur/intentproof/discussions)
 
 Thank you for helping make E2E verification delightful and proof-driven for developers worldwide! 💙

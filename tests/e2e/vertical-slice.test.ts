@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
 const exampleAppDir = path.resolve(projectRoot, 'examples/remote-work-app');
 
-describe('E2E Vertical Slice: Flowproof Verification', () => {
+describe('E2E Vertical Slice: Intentproof Verification', () => {
   let serverHandle: { server: any; url: string; close: () => Promise<void> };
 
   beforeAll(async () => {
@@ -33,7 +33,7 @@ describe('E2E Vertical Slice: Flowproof Verification', () => {
     const flowPath = path.join(exampleAppDir, 'flows/employee.remote-request.create.yaml');
     const flow = await FlowLoader.loadFile(flowPath);
 
-    const config = await AdapterRegistry.loadConfig(exampleAppDir, 'flowproof.config.ts');
+    const config = await AdapterRegistry.loadConfig(exampleAppDir, 'intentproof.config.ts');
     config.baseUrl = serverHandle.url;
     config.artifactsDir = path.join(exampleAppDir, 'artifacts');
 
@@ -78,7 +78,7 @@ describe('E2E Vertical Slice: Flowproof Verification', () => {
     expect(summaryMd).toContain('Employee Creates Remote Request');
 
     // Test CLI subcommands on the result
-    const configPath = path.join(exampleAppDir, 'flowproof.config.ts');
+    const configPath = path.join(exampleAppDir, 'intentproof.config.ts');
     await flowsCommand({ json: true, config: configPath });
     await inspectCommand(result.executionId, { json: true, config: configPath });
     await evidenceCommand(result.executionId, { json: true, config: configPath });

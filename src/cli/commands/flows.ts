@@ -35,7 +35,7 @@ export async function flowsCommand(options: FlowsCommandOptions): Promise<void> 
   console.log(pc.bold(`\nRegistered Flows in ${pc.cyan(path.relative(projectDir, flowsDir) || '.')}:\n`));
 
   if (validFlows.length === 0) {
-    console.log(pc.dim('No flow definitions found. Run `flowproof discover --save` to create initial flows.'));
+    console.log(pc.dim('No flow definitions found. Run `intentproof discover --save` to create initial flows.'));
     return;
   }
 

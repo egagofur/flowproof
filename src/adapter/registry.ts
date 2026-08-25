@@ -39,15 +39,18 @@ export class AdapterRegistry {
     }
 
     const candidateFiles = [
+      'intentproof.config.ts',
+      'intentproof.config.js',
+      'intentproof.config.mjs',
+      'intentproof.config.cjs',
+      'intentproof.config.json',
       'flowproof.config.ts',
       'flowproof.config.js',
       'flowproof.config.mjs',
       'flowproof.config.cjs',
       'flowproof.config.json',
-      path.join('flowproof', 'config.ts'),
-      path.join('flowproof', 'config.js'),
-      path.join('flowproof', 'flowproof.config.ts'),
-      path.join('flowproof', 'flowproof.config.js'),
+      path.join('intentproof', 'config.ts'),
+      path.join('intentproof', 'config.js'),
     ];
 
     for (const file of candidateFiles) {
@@ -64,7 +67,7 @@ export class AdapterRegistry {
 
     // Default fallback config if none found
     const fallbackConfig: ProjectConfig = {
-      baseUrl: process.env.FLOWPROOF_BASE_URL || 'http://localhost:3000',
+      baseUrl: process.env.INTENTPROOF_BASE_URL || process.env.FLOWPROOF_BASE_URL || 'http://localhost:3000',
       flowsDir: path.resolve(searchDir, 'flows'),
       artifactsDir: path.resolve(searchDir, 'artifacts'),
       defaultExecutor: 'playwright',
@@ -81,7 +84,7 @@ export class AdapterRegistry {
       const content = await fs.readFile(filePath, 'utf-8');
       loaded = JSON.parse(content);
     } else if (filePath.endsWith('.ts') || filePath.endsWith('.mts')) {
-      const tempPath = path.join(configDir, `.flowproof.config.temp.${Date.now()}.mjs`);
+      const tempPath = path.join(configDir, `.intentproof.config.temp.${Date.now()}.mjs`);
       try {
         const { build } = await import('esbuild');
         const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -92,12 +95,12 @@ export class AdapterRegistry {
           path.resolve(currentDir, '../../dist/index.js'),
           path.resolve(currentDir, '../../src/index.ts'),
         ];
-        let flowproofEntry: string | undefined;
+        let libraryEntry: string | undefined;
         for (const candidate of candidateEntries) {
           try {
             await fs.access(candidate);
             if (candidate.endsWith(path.join('cli', 'index.js'))) continue;
-            flowproofEntry = candidate;
+            libraryEntry = candidate;
             break;
           } catch {}
         }
@@ -112,14 +115,14 @@ export class AdapterRegistry {
           packages: 'external',
         };
 
-        if (flowproofEntry) {
-          const flowproofFileUrl = `file://${flowproofEntry}`;
+        if (libraryEntry) {
+          const libraryFileUrl = `file://${libraryEntry}`;
           buildOptions.plugins = [
             {
-              name: 'flowproof-resolver',
+              name: 'intentproof-resolver',
               setup(b: any) {
-                b.onResolve({ filter: /^flowproof$/ }, () => ({
-                  path: flowproofFileUrl,
+                b.onResolve({ filter: /^(intentproof|flowproof)$/ }, () => ({
+                  path: libraryFileUrl,
                   external: true,
                 }));
               },
@@ -137,26 +140,21 @@ export class AdapterRegistry {
         const config = mod.default || mod.config || mod;
         loaded = typeof config === 'function' ? await config() : config;
       } catch (err: any) {
-        throw new Error(`Failed to load Flowproof configuration from ${filePath}: ${err.message}`);
+        throw new Error(`Failed to load Intentproof configuration from ${filePath}: ${err.message}`);
       } finally {
         await fs.unlink(tempPath).catch(() => {});
       }
     } else {
-      try {
-        const mod = await import(filePath);
-        const config = mod.default || mod.config || mod;
-        loaded = typeof config === 'function' ? await config() : config;
-      } catch (err: any) {
-        throw new Error(`Failed to load Flowproof configuration from ${filePath}: ${err.message}`);
-      }
+      const mod = await import(`file://${filePath}`);
+      const config = mod.default || mod.config || mod;
+      loaded = typeof config === 'function' ? await config() : config;
     }
 
-    const resolved: ProjectConfig = {
-      ...loaded,
-      flowsDir: loaded.flowsDir ? path.resolve(configDir, loaded.flowsDir) : path.join(configDir, 'flows'),
-      artifactsDir: loaded.artifactsDir ? path.resolve(configDir, loaded.artifactsDir) : path.join(configDir, 'artifacts'),
-    };
+    if (!loaded.baseUrl) {
+      throw new Error(`Intentproof configuration at ${filePath} is missing required 'baseUrl'`);
+    }
 
-    return resolved;
+    this.registeredConfig = loaded;
+    return loaded;
   }
 }

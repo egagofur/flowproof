@@ -1,5 +1,5 @@
 export function generateViteConfig(baseUrl = 'http://localhost:5173'): string {
-  return `import { defineConfig, TokenAuthStrategy, PasswordAuthStrategy } from 'flowproof';
+  return `import { defineConfig, TokenAuthStrategy, PasswordAuthStrategy } from 'intentproof';
 
 export default defineConfig({
   baseUrl: process.env.APP_BASE_URL || '${baseUrl}',

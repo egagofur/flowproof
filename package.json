@@ -1,15 +1,12 @@
 {
-  "name": "@egagofur/flowproof",
+  "name": "intentproof",
   "version": "0.1.0",
   "description": "AI-driven E2E verification orchestrator & interactive browser flow recorder for Playwright & Aside",
   "type": "module",
-  "publishConfig": {
-    "access": "public"
-  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "flowproof": "./bin/flowproof.js"
+    "intentproof": "./bin/intentproof.js"
   },
   "scripts": {
     "build": "tsup",
@@ -21,13 +18,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/egagofur/flowproof.git"
+    "url": "git+https://github.com/egagofur/intentproof.git"
   },
-  "homepage": "https://github.com/egagofur/flowproof#readme",
+  "homepage": "https://github.com/egagofur/intentproof#readme",
   "bugs": {
-    "url": "https://github.com/egagofur/flowproof/issues"
+    "url": "https://github.com/egagofur/intentproof/issues"
   },
   "keywords": [
+    "intentproof",
     "e2e",
     "testing",
     "playwright",

@@ -14,7 +14,7 @@ export class ConsoleReporter {
         : pc.bgRed(pc.white(' FAILED '));
 
     console.log('');
-    console.log(pc.bold('FLOWPROOF VERIFICATION'));
+    console.log(pc.bold('INTENTPROOF VERIFICATION'));
     console.log(pc.dim('────────────────────────────────────────'));
     console.log(`Status:      ${statusBadge}`);
     console.log(`Flow:        ${pc.bold(result.flowName)} ${pc.dim(`(${result.flowId})`)}`);
