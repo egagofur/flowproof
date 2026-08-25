@@ -10,7 +10,7 @@
     "bin"
   ],
   "bin": {
-    "intentproof": "./bin/intentproof.js"
+    "intentproof": "bin/intentproof.js"
   },
   "scripts": {
     "build": "tsup",
