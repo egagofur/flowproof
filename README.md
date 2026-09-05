@@ -237,6 +237,99 @@ evidence:
 
 ---
 
+## Strapi 5 and semantic browser flows
+
+Legacy CSS selector strings remain valid, but semantic targets are preferred for
+Strapi Design System controls:
+
+```yaml
+variables:
+  entryTitle: "E2E News ${runId}"
+steps:
+  - action: fill
+    target: { label: Title, exact: true }
+    value: "${entryTitle}"
+  - action: select_option
+    target: { role: combobox, name: Status, exact: true }
+    value: Published
+  - action: select_relation
+    target: { testId: relation-input-news_category }
+    value: News
+assertions:
+  - type: text_contains
+    target: { text: Saved, exact: true }
+    value: Saved
+```
+
+Supported target keys are `role` plus optional accessible `name`, `label`,
+`testId`, `text`, `placeholder`, and explicit `selector`. Locator object forms
+are mutually exclusive. Runtime built-ins are `${runId}`, `${currentDate}`,
+`${currentDateTime}`, and explicitly namespaced `${env.NAME}`. Missing variables
+fail before browser execution. Project `variables` may provide per-flow fixture
+values.
+
+The Playwright executor supports native `select` plus custom `select_option`,
+`select_relation`, `remove_relation`, `toggle`, `upload_file`, and
+`fill_tiptap` actions. Custom listbox options are resolved at page level so
+portaled Strapi listboxes work without framework CSS classes.
+
+### Error policy and automatic failure artifacts
+
+```ts
+export default defineConfig({
+  baseUrl: process.env.CMS_URL!,
+  options: {
+    errorPolicy: {
+      failOnPageError: true,
+      failOnConsoleError: true,
+      failOnHttp5xx: true,
+      failOnHttp4xx: false,
+      failOnRequestFailed: false,
+      failOnDangerNotification: true,
+      failOnUnexpectedDialog: true,
+      ignoredConsolePatterns: [],
+      ignoredRequestPatterns: [],
+    },
+    screenshotMaskTargets: [{ label: 'API token', exact: true }],
+  },
+});
+```
+
+Ignore entries use anchored glob matching (`*`) or `/regex/flags` with only
+`i` and `m` flags. They never execute YAML as code. Password inputs are always
+masked. Failed or blocked browser runs attempt viewport/full-page screenshots,
+page HTML, an accessibility snapshot, trace, console/network logs,
+`result.json`, and `summary.md`. Partial capture failures are listed as artifact
+warnings while the original flow error remains primary.
+
+### Strapi schema generation
+
+```bash
+intentproof generate --adapter strapi --dir . --output-dir flows/strapi
+```
+
+The adapter discovers `src/api/*/content-types/*/schema.json` and
+`src/components/**/*.json`, writes a stable `manifest.json`, one lifecycle
+draft per collection type, one edit/reload/restore draft per single type, and a
+generation report. Component cycles and unsupported custom fields/dynamic
+zones are explicit. Generated drafts are generator-owned: regenerate them from
+schema changes, then implement project-owned `strapi.todo.*` handlers or create
+hand-authored flows for business-specific population and assertions. The
+generator does not claim those TODOs as executed coverage.
+
+### Reusable password authentication
+
+`PasswordAuthStrategy` caches successful state once per role/run. Set
+`storageStatePath` (a path containing optional `{role}`, or a role-to-path
+function) to reuse it across processes. Supply `validateSuccess` to detect and
+refresh expired disk state. Auth-state paths such as `.auth/`, `auth-state/`,
+and `*.storage-state.json` must remain uncommitted.
+
+Suite verification runs `beforeAll`/`afterAll` once and
+`beforeFlow`/`afterFlow` per flow. A `beforeFlow` hook can call
+`lifecycle.registerCleanup(...)`; registered cleanup runs even after a failed
+flow.
+
 ## 🧠 AI Diagnostic Engine
 
 When a flow fails, Intentproof doesn't just output a stack trace. The **AI Diagnostic Engine** classifies the failure into 4 actionable root causes:

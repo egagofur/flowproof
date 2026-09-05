@@ -3,6 +3,7 @@ import { FlowDefinition } from '../contracts/flow.js';
 import { ExecutionContext, ExecutionOptions } from '../contracts/context.js';
 import {
   ArtifactManifest,
+  ExecutionResult,
   VerificationResult,
   VerificationStatus,
 } from '../contracts/result.js';
@@ -12,6 +13,8 @@ import { SecretRedactor } from '../security/secret-redactor.js';
 import { ExecutorRegistry } from '../../executors/base.js';
 import { ResultAnalyzer } from '../../ai/analyzer/result-analyzer.js';
 import { StaleFlowDetector } from '../../ai/stale/stale-detector.js';
+import { resolveFlowRuntime } from '../runtime/interpolation.js';
+import type { FlowLifecycleContext } from '../../adapter/config.js';
 
 export interface OrchestratorOptions {
   config: ProjectConfig;
@@ -46,12 +49,22 @@ export class FlowOrchestrator {
     flow: FlowDefinition,
     overrideOptions: ExecutionOptions = {}
   ): Promise<VerificationResult> {
+    const fixtureValues = typeof this.config.variables === 'function'
+      ? await this.config.variables(flow)
+      : this.config.variables;
+    const runtime = resolveFlowRuntime(flow, { fixtureValues, env: process.env });
+    const resolvedFlow = runtime.flow;
+    for (const name of runtime.secretVariableNames) {
+      const value = runtime.variables[name];
+      if (typeof value === 'string') this.redactor.registerSecret(value);
+    }
+
     const mergedOptions: ExecutionOptions = {
       ...this.config.options,
       ...overrideOptions,
       executor:
         overrideOptions.executor ||
-        flow.execution?.preferred ||
+        resolvedFlow.execution?.preferred ||
         this.config.defaultExecutor ||
         process.env.INTENTPROOF_BROWSER_EXECUTOR ||
         'playwright',
@@ -59,12 +72,21 @@ export class FlowOrchestrator {
 
     // 1. Initialize execution context and directories
     const context = await this.evidenceManager.createExecutionContext(
-      flow.id,
+      resolvedFlow.id,
       this.config.baseUrl,
       mergedOptions
     );
     context.customActions = this.config.customActions;
     context.customAssertions = this.config.customAssertions;
+    context.variables = runtime.variables;
+    context.secretVariableNames = runtime.secretVariableNames;
+
+    const cleanups: Array<() => Promise<void> | void> = [];
+    const lifecycle: FlowLifecycleContext = {
+      registerCleanup(cleanup) {
+        cleanups.push(cleanup);
+      },
+    };
 
     const startTime = new Date().toISOString();
     const startMs = Date.now();
@@ -73,7 +95,7 @@ export class FlowOrchestrator {
     let fatalError: string | undefined;
 
     try {
-      await this.config.hooks?.beforeFlow?.(flow);
+      await this.config.hooks?.beforeFlow?.(resolvedFlow, lifecycle);
     } catch (err: any) {
       verificationStatus = 'BLOCKED';
       fatalError = `beforeFlow hook failed: ${err.message}`;
@@ -82,7 +104,7 @@ export class FlowOrchestrator {
     // 2. Authentication Resolution
     if (verificationStatus !== 'BLOCKED') {
       try {
-        for (const precondition of flow.preconditions) {
+        for (const precondition of resolvedFlow.preconditions) {
           if (precondition.authenticated_as) {
             const role = precondition.authenticated_as;
             const authStrategy = this.config.auth?.[role];
@@ -109,7 +131,7 @@ export class FlowOrchestrator {
       }
     }
 
-    let rawExecutionResult = {
+    let rawExecutionResult: ExecutionResult = {
       executor: mergedOptions.executor || 'playwright',
       status: verificationStatus,
       startTime,
@@ -121,7 +143,10 @@ export class FlowOrchestrator {
       error: fatalError,
       rawConsoleLogs: [],
       rawNetworkErrors: [],
-    } as any;
+      artifactWarnings: verificationStatus === 'BLOCKED'
+        ? ['Automatic browser failure evidence was unavailable because execution was blocked before a page was initialized.']
+        : [],
+    };
 
     // 3. Browser Execution Dispatch (if not BLOCKED)
     if (verificationStatus !== 'BLOCKED') {
@@ -132,7 +157,7 @@ export class FlowOrchestrator {
         executor = ExecutorRegistry.get(executorName);
         await executor.initialize(context);
         initialized = true;
-        rawExecutionResult = await executor.execute(flow, context);
+        rawExecutionResult = await executor.execute(resolvedFlow, context);
         verificationStatus = rawExecutionResult.status;
         fatalError = rawExecutionResult.error;
       } catch (err: any) {
@@ -140,6 +165,20 @@ export class FlowOrchestrator {
         fatalError = initialized
           ? `Executor encountered an unexpected error: ${err.message}`
           : `Executor initialization failed: ${err.message}`;
+        rawExecutionResult.status = verificationStatus;
+        rawExecutionResult.error = fatalError;
+        if (initialized && executor?.captureFailureEvidence) {
+          try {
+            const captured = await executor.captureFailureEvidence(context);
+            rawExecutionResult.checkpoints = captured.checkpoints;
+            rawExecutionResult.artifactWarnings = captured.artifactWarnings;
+            rawExecutionResult.generatedArtifacts = captured.generatedArtifacts;
+          } catch (captureError: any) {
+            rawExecutionResult.artifactWarnings = [`Automatic failure evidence failed: ${captureError.message}`];
+          }
+        } else {
+          rawExecutionResult.artifactWarnings = ['Automatic browser failure evidence was unavailable because no live page was initialized.'];
+        }
       } finally {
         if (executor) {
           try {
@@ -172,11 +211,14 @@ export class FlowOrchestrator {
       }
     }
 
+    const generated = rawExecutionResult.generatedArtifacts || {};
     const artifacts: ArtifactManifest = {
       resultJson: path.join('result.json'),
       summaryMarkdown: path.join('summary.md'),
-      screenshots: screenshotPaths,
-      trace: rawExecutionResult.status !== 'PROVEN' ? path.join('trace', 'trace.zip') : undefined,
+      screenshots: [...new Set([...screenshotPaths, ...(generated.screenshots || [])])],
+      trace: generated.trace,
+      pageHtml: generated.pageHtml,
+      accessibilitySnapshot: generated.accessibilitySnapshot,
       consoleLog: logPaths.consoleLog,
       networkLog: logPaths.networkLog,
       orchestratorLog: logPaths.orchestratorLog,
@@ -185,16 +227,16 @@ export class FlowOrchestrator {
     const endTime = new Date().toISOString();
     const durationMs = Date.now() - startMs;
 
-    const totalSteps = flow.steps.length;
-    const passedSteps = rawExecutionResult.steps.filter((s: any) => s.status === 'passed').length;
-    const totalAssertions = flow.assertions.length;
-    const passedAssertions = rawExecutionResult.assertions.filter((a: any) => a.status === 'passed').length;
+    const totalSteps = resolvedFlow.steps.length;
+    const passedSteps = rawExecutionResult.steps.filter((step) => step.status === 'passed').length;
+    const totalAssertions = resolvedFlow.assertions.length;
+    const passedAssertions = rawExecutionResult.assertions.filter((assertion) => assertion.status === 'passed').length;
 
     // 6. Build Initial Verification Result
     let result: VerificationResult = {
       executionId: context.executionId,
-      flowId: flow.id,
-      flowName: flow.name,
+      flowId: resolvedFlow.id,
+      flowName: resolvedFlow.name,
       status: verificationStatus,
       executor: rawExecutionResult.executor || mergedOptions.executor || 'playwright',
       startTime,
@@ -209,20 +251,29 @@ export class FlowOrchestrator {
       assertions: rawExecutionResult.assertions || [],
       artifacts,
       error: fatalError,
+      policyViolations: rawExecutionResult.policyViolations,
+      artifactWarnings: rawExecutionResult.artifactWarnings,
     };
 
     try {
-      await this.config.hooks?.afterFlow?.(flow, result);
+      await this.config.hooks?.afterFlow?.(resolvedFlow, result, lifecycle);
     } catch (err: any) {
       result.status = 'INCONCLUSIVE';
-      result.error = [result.error, `afterFlow hook failed: ${err.message}`]
-        .filter(Boolean)
-        .join(' ');
+      result.error = [result.error, `afterFlow hook failed: ${err.message}`].filter(Boolean).join(' ');
+    } finally {
+      for (const cleanup of cleanups.reverse()) {
+        try {
+          await cleanup();
+        } catch (err: any) {
+          result.status = result.status === 'PROVEN' ? 'INCONCLUSIVE' : result.status;
+          result.error = [result.error, `Flow cleanup failed: ${err.message}`].filter(Boolean).join(' ');
+        }
+      }
     }
 
     // 7. Post-Execution AI Diagnostic Analysis
-    const diagnostic = ResultAnalyzer.analyze(flow, result);
-    const staleSuggestion = StaleFlowDetector.detect(flow, result);
+    const diagnostic = ResultAnalyzer.analyze(resolvedFlow, result);
+    const staleSuggestion = StaleFlowDetector.detect(resolvedFlow, result);
     if (staleSuggestion.isStale) {
       diagnostic.staleSuggestion = staleSuggestion;
       diagnostic.stalePatchSuggestion = staleSuggestion.proposedPatch;

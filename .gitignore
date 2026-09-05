@@ -5,3 +5,7 @@ artifacts/
 coverage/
 .DS_Store
 *.log
+# Browser authentication state contains session credentials.
+.auth/
+auth-state/
+*.storage-state.json

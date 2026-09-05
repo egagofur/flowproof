@@ -7,6 +7,7 @@ import { ExecutionContext } from '../../src/core/contracts/context.js';
 import { ExecutionResult } from '../../src/core/contracts/result.js';
 import { FlowOrchestrator } from '../../src/core/orchestrator/flow-orchestrator.js';
 import { BrowserExecutor, ExecutorRegistry } from '../../src/executors/base.js';
+import type { ProjectHooks } from '../../src/adapter/config.js';
 
 const flow: FlowDefinition = {
   id: 'orchestrator.test',
@@ -30,10 +31,7 @@ describe('FlowOrchestrator failures', () => {
   async function createOrchestrator(
     executorName: string,
     executor: BrowserExecutor,
-    hooks?: {
-      beforeFlow?: () => Promise<void>;
-      afterFlow?: () => Promise<void>;
-    }
+    hooks?: ProjectHooks
   ): Promise<FlowOrchestrator> {
     const artifactsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'intentproof-orchestrator-test-'));
     tempDirs.push(artifactsDir);
@@ -121,6 +119,27 @@ describe('FlowOrchestrator failures', () => {
     expect(result.status).toBe('INCONCLUSIVE');
     expect(result.error).toContain('afterFlow hook failed: reporter unavailable');
     expect(result.diagnostic?.rootCauseClassification).toBe('unknown');
+  });
+
+  it('runs registered cleanup after a failed flow', async () => {
+    const order: string[] = [];
+    const executor: BrowserExecutor = {
+      name: 'failed-with-cleanup',
+      initialize: async () => {},
+      execute: async () => ({ ...provenResult(), status: 'FAILED', error: 'application failed' }),
+      cleanup: async () => { order.push('executor-cleanup'); },
+    };
+    const orchestrator = await createOrchestrator('failed-with-cleanup', executor, {
+      beforeFlow: async (_flow, lifecycle) => {
+        order.push('beforeFlow');
+        lifecycle.registerCleanup(() => { order.push('registered-cleanup'); });
+      },
+      afterFlow: async () => { order.push('afterFlow'); },
+    });
+
+    const result = await orchestrator.verifyFlow(flow);
+    expect(result.status).toBe('FAILED');
+    expect(order).toEqual(['beforeFlow', 'executor-cleanup', 'afterFlow', 'registered-cleanup']);
   });
 
   it('persists a structured stale-selector suggestion', async () => {

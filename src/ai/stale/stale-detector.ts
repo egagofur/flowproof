@@ -36,7 +36,7 @@ export class StaleFlowDetector {
       errorText.includes('waiting for locator') ||
       errorText.includes('Element remained hidden');
 
-    if (isSelectorNotFound && failedStep?.target) {
+    if (isSelectorNotFound && typeof failedStep?.target === 'string') {
       const stepIndex = failedStep.index;
       const originalTarget = failedStep.target;
 

@@ -10,12 +10,47 @@ export const FlowPreconditionSchema = z.object({
 });
 export type FlowPrecondition = z.infer<typeof FlowPreconditionSchema>;
 
+export const LocatorTargetSchema = z.union([
+  z.object({
+    role: z.string().min(1),
+    name: z.string().min(1).optional(),
+    exact: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    label: z.string().min(1),
+    exact: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    testId: z.string().min(1),
+  }).strict(),
+  z.object({
+    text: z.string().min(1),
+    exact: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    placeholder: z.string().min(1),
+    exact: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    selector: z.string().min(1),
+  }).strict(),
+]);
+export type StructuredLocatorTarget = z.infer<typeof LocatorTargetSchema>;
+export const FlowTargetSchema = z.union([z.string().min(1), LocatorTargetSchema]);
+export type FlowTarget = z.infer<typeof FlowTargetSchema>;
+
 export const FlowStepActionSchema = z.enum([
   'navigate',
   'click',
   'fill',
   'type',
   'select',
+  'select_option',
+  'select_relation',
+  'remove_relation',
+  'toggle',
+  'upload_file',
+  'fill_tiptap',
   'select_date',
   'hover',
   'wait',
@@ -28,8 +63,8 @@ export type FlowStepAction = z.infer<typeof FlowStepActionSchema>;
 export const FlowStepSchema = z.object({
   id: z.string().optional(),
   action: FlowStepActionSchema,
-  target: z.string().optional(), // Selector or route or field descriptor
-  value: z.any().optional(), // Text value, option value, etc.
+  target: FlowTargetSchema.optional(), // Legacy selector/route or semantic locator
+  value: z.unknown().optional(), // Text value, option value, etc.
   description: z.string().optional(),
   timeoutMs: z.number().positive().optional(),
   optional: z.boolean().optional(),
@@ -53,8 +88,8 @@ export type FlowAssertionType = z.infer<typeof FlowAssertionTypeSchema>;
 export const FlowAssertionSchema = z.object({
   id: z.string().optional(),
   type: FlowAssertionTypeSchema,
-  target: z.string().optional(), // Selector or expression
-  value: z.any().optional(), // Expected value
+  target: FlowTargetSchema.optional(), // Legacy selector/expression or semantic locator
+  value: z.unknown().optional(), // Expected value
   attribute: z.string().optional(), // Attribute name when type is attribute_equals
   count: z.number().int().nonnegative().optional(), // When type is element_count
   description: z.string().optional(),
@@ -91,6 +126,7 @@ export const FlowDefinitionSchema = z.object({
   priority: FlowPrioritySchema.default('high'),
   roles: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
+  variables: z.record(z.unknown()).default({}),
   preconditions: z.array(FlowPreconditionSchema).default([]),
   steps: z.array(FlowStepSchema).min(1, 'At least one step is required'),
   assertions: z.array(FlowAssertionSchema).min(1, 'At least one assertion is required'),
@@ -105,4 +141,7 @@ export const FlowDefinitionSchema = z.object({
   confidence: z.number().min(0).max(1).optional(),
 });
 
-export type FlowDefinition = z.infer<typeof FlowDefinitionSchema>;
+type ParsedFlowDefinition = z.infer<typeof FlowDefinitionSchema>;
+export type FlowDefinition = Omit<ParsedFlowDefinition, 'variables'> & {
+  variables?: Record<string, unknown>;
+};

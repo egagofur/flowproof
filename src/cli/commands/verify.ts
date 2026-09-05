@@ -102,18 +102,18 @@ export async function verifyCommand(options: VerifyCommandOptions): Promise<void
   const results: VerificationResult[] = [];
   let anyFailed = false;
 
-  for (const flow of targetFlows) {
-    const res = await orchestrator.verifyFlow(flow, {
+  const suiteResults = await runVerificationSuite(
+    targetFlows,
+    async (flow) => orchestrator.verifyFlow(flow, {
       executor: options.executor,
       headless: options.headed ? false : config.options?.headless,
-    });
+    }),
+    config.hooks
+  );
 
+  for (const res of suiteResults) {
     results.push(res);
-
-    if (res.status !== 'PROVEN') {
-      anyFailed = true;
-    }
-
+    if (res.status !== 'PROVEN') anyFailed = true;
     if (!options.json) {
       ConsoleReporter.report(res);
       if (options.reportMattermost) {
@@ -126,10 +126,25 @@ export async function verifyCommand(options: VerifyCommandOptions): Promise<void
   }
 
   if (options.json) {
-    console.log(JsonReporter.format(results.length === 1 ? results[0] : (results as any)));
+    console.log(JsonReporter.format(results.length === 1 ? results[0] : results));
   }
 
   if (anyFailed) {
     process.exitCode = 1;
+  }
+}
+
+export async function runVerificationSuite<T>(
+  flows: FlowDefinition[],
+  verify: (flow: FlowDefinition) => Promise<T>,
+  hooks?: { beforeAll?: () => Promise<void> | void; afterAll?: () => Promise<void> | void }
+): Promise<T[]> {
+  const results: T[] = [];
+  try {
+    await hooks?.beforeAll?.();
+    for (const flow of flows) results.push(await verify(flow));
+    return results;
+  } finally {
+    await hooks?.afterAll?.();
   }
 }

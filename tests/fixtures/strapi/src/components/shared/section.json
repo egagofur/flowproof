@@ -1,0 +1,9 @@
+{
+  "collectionName": "components_shared_sections",
+  "info": { "displayName": "Section" },
+  "attributes": {
+    "heading": { "type": "string", "required": true },
+    "image": { "type": "media", "multiple": false },
+    "seo": { "type": "component", "component": "shared.seo", "repeatable": false }
+  }
+}

@@ -1,14 +1,21 @@
-import { chromium, Page } from 'playwright';
+import { chromium, type BrowserContextOptions } from 'playwright';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import YAML from 'yaml';
 import pc from 'picocolors';
-import { FlowDefinition, FlowStep } from '../../core/contracts/flow.js';
+import { FlowDefinition, FlowStep, FlowTarget } from '../../core/contracts/flow.js';
 import { IntentproofConfig } from '../../adapter/config.js';
 
+declare global {
+  interface Window {
+    __intentproof_record(action: RecordedAction): void;
+    __intentproof_finish(): void;
+  }
+}
+
 export interface RecordedAction {
-  type: 'navigate' | 'click' | 'fill' | 'select' | 'press_key' | 'submit';
-  target?: string;
+  type: 'navigate' | 'click' | 'fill' | 'select' | 'select_option' | 'press_key' | 'submit';
+  target?: FlowTarget;
   value?: string | number | boolean;
   description?: string;
   url?: string;
@@ -39,15 +46,17 @@ export class FlowRecorder {
     let isRecordingComplete = false;
 
     // Check for storage state
-    let storageState: any = undefined;
+    let storageState: BrowserContextOptions['storageState'];
     if (this.config.auth && this.config.auth[role]) {
       const authStrategy = this.config.auth[role];
-      if ((authStrategy as any).options?.storageStatePath) {
-        const p = (authStrategy as any).options.storageStatePath;
+      const statePath = (authStrategy as unknown as { options?: { storageStatePath?: unknown } }).options?.storageStatePath;
+      if (typeof statePath === 'string') {
         try {
-          const content = await fs.readFile(p, 'utf-8');
-          storageState = JSON.parse(content);
-        } catch { }
+          const content = await fs.readFile(statePath, 'utf-8');
+          storageState = JSON.parse(content) as BrowserContextOptions['storageState'];
+        } catch {
+          // Recording can continue without cached state.
+        }
       }
     }
 
@@ -88,91 +97,23 @@ export class FlowRecorder {
 
     // Inject client-side event listeners
     await page.addInitScript(() => {
-      function getSmartSelector(el: HTMLElement): string {
+      function getSmartSelector(el: HTMLElement): FlowTarget {
         if (!el) return 'body';
-
-        // 1. Data test id
-        if (el.getAttribute('data-testid')) {
-          return `[data-testid="${el.getAttribute('data-testid')}"]`;
-        }
-
-        // 2. Ant Design Select Option item
-        const optionItem = el.closest('.ant-select-item-option') || el.closest('.ant-select-dropdown [role="option"]');
-        if (optionItem || el.classList?.contains('ant-select-item-option-content')) {
-          const text = (optionItem || el).textContent?.trim();
-          if (text) return `.ant-select-item-option:has-text("${text}")`;
-        }
-
-        // 3. Ant Design DatePicker cell
-        const pickerCell = el.closest('.ant-picker-cell');
-        if (pickerCell || el.classList?.contains('ant-picker-cell-inner')) {
-          const text = (pickerCell || el).textContent?.trim();
-          if (text) return `.ant-picker-cell:not(.ant-picker-cell-disabled):has-text("${text}")`;
-        }
-
-        // 4. Form item label association (Ant Design / standard forms)
-        const formItem = el.closest('.ant-form-item');
-        if (formItem) {
-          const label = formItem.querySelector('label')?.textContent?.trim();
-          if (label) {
-            if (el.closest('.ant-select')) return `.ant-form-item:has-text("${label}") .ant-select`;
-            if (el.tagName === 'INPUT') return `.ant-form-item:has-text("${label}") input`;
-            return `.ant-form-item:has-text("${label}")`;
-          }
-        }
-
-        // 5. Button or element inside button with text
-        const btn = el.tagName === 'BUTTON' ? el : el.closest('button');
-        if (btn) {
-          const text = btn.textContent?.trim();
-          if (text && text.length < 35 && !text.includes('\n')) {
-            return `button:has-text("${text}")`;
-          }
-          if (btn.getAttribute('aria-label')) {
-            return `button[aria-label="${btn.getAttribute('aria-label')}"]`;
-          }
-        }
-
-        // 6. Link with text
-        const link = el.tagName === 'A' ? el : el.closest('a');
-        if (link) {
-          const text = link.textContent?.trim();
-          if (text && text.length < 35 && !text.includes('\n')) {
-            return `a:has-text("${text}")`;
-          }
-        }
-
-        // 7. Aria label
-        if (el.getAttribute('aria-label')) {
-          return `[aria-label="${el.getAttribute('aria-label')}"]`;
-        }
-
-        // 8. Placeholder
-        if (el.getAttribute('placeholder')) {
-          return `input[placeholder="${el.getAttribute('placeholder')}"]`;
-        }
-
-        // 9. Input name or id
-        if (el.getAttribute('name')) {
-          return `input[name="${el.getAttribute('name')}"]`;
-        }
-        if (el.id) {
-          return `#${el.id}`;
-        }
-
-        // 10. Text content fallback for clickable items
+        const testId = el.getAttribute('data-testid');
+        if (testId) return { testId };
+        const label = (el as HTMLInputElement).labels?.[0]?.textContent?.trim();
+        if (label) return { label, exact: true };
+        const ariaLabel = el.getAttribute('aria-label');
+        const role = el.getAttribute('role') || ({ BUTTON: 'button', A: 'link', SELECT: 'combobox' } as Record<string, string>)[el.tagName];
         const text = el.textContent?.trim();
-        if (text && text.length > 1 && text.length < 30 && !text.includes('\n')) {
-          return `${el.tagName.toLowerCase()}:has-text("${text}")`;
-        }
-
-        // 11. Class fallback
-        const className = typeof el.className === 'string' ? el.className.split(' ')[0] : '';
-        if (className) {
-          return `${el.tagName.toLowerCase()}.${className}`;
-        }
-
-        return el.tagName.toLowerCase();
+        if (role && (ariaLabel || text)) return { role, name: ariaLabel || text, exact: true };
+        const placeholder = el.getAttribute('placeholder');
+        if (placeholder) return { placeholder, exact: true };
+        if (el.id) return { selector: `#${CSS.escape(el.id)}` };
+        const name = el.getAttribute('name');
+        if (name) return { selector: `[name="${CSS.escape(name)}"]` };
+        if (text && text.length > 1 && text.length < 60 && !text.includes('\n')) return { text, exact: true };
+        return { selector: el.tagName.toLowerCase() };
       }
 
       // Record clicks
@@ -182,9 +123,21 @@ export class FlowRecorder {
           const target = e.target as HTMLElement;
           if (!target || target.closest('#intentproof-recorder-hud')) return;
 
+          const option = target.closest('[role="option"]') as HTMLElement | null;
+          const text = (option || target).textContent?.trim();
+          if (option && text) {
+            const combobox = document.querySelector('[role="combobox"][aria-expanded="true"]') as HTMLElement | null;
+            window.__intentproof_record({
+              type: 'select_option',
+              target: getSmartSelector(combobox || option),
+              value: text,
+              description: `Select option "${text.slice(0, 40)}"`,
+              timestamp: Date.now(),
+            });
+            return;
+          }
           const selector = getSmartSelector(target);
-          const text = target.textContent?.trim();
-          (window as any).__intentproof_record({
+          window.__intentproof_record({
             type: 'click',
             target: selector,
             description: text ? `Click "${text.slice(0, 25)}"` : `Click ${selector}`,
@@ -202,8 +155,9 @@ export class FlowRecorder {
           if (!target || target.closest('#intentproof-recorder-hud')) return;
 
           const selector = getSmartSelector(target);
-          (window as any).__intentproof_record({
-            type: 'fill',
+          const actionType = target.tagName === 'SELECT' ? 'select' : 'fill';
+          window.__intentproof_record({
+            type: actionType,
             target: selector,
             value: target.value,
             description: `Fill "${target.value}" into ${selector}`,
@@ -222,7 +176,7 @@ export class FlowRecorder {
             if (!target || target.closest('#intentproof-recorder-hud')) return;
 
             const selector = getSmartSelector(target);
-            (window as any).__intentproof_record({
+            window.__intentproof_record({
               type: 'press_key',
               target: selector,
               value: 'Enter',
@@ -268,7 +222,7 @@ export class FlowRecorder {
         document.body.appendChild(hud);
 
         document.getElementById('intentproof-btn-finish')?.addEventListener('click', () => {
-          (window as any).__intentproof_finish();
+          window.__intentproof_finish();
         });
       });
     });
@@ -309,7 +263,7 @@ export class FlowRecorder {
       const a = recordedActions[i];
       steps.push({
         id: `step-${i + 1}-${a.type}`,
-        action: a.type as any,
+        action: a.type,
         target: a.target,
         value: a.value,
         description: a.description,
@@ -330,14 +284,19 @@ export class FlowRecorder {
         },
       ],
       steps,
-      assertions: [
-        {
-          id: 'assert-flow-completed',
-          type: 'element_visible',
-          target: 'body',
-          description: 'Flow executed and final view rendered',
-        },
-      ],
+      assertions: recordedActions.length > 0 && recordedActions[recordedActions.length - 1].target
+        ? [{
+            id: 'assert-recorded-completion',
+            type: 'element_visible',
+            target: recordedActions[recordedActions.length - 1].target,
+            description: 'TODO: replace this inferred final-element check with a business outcome assertion.',
+          }]
+        : [{
+            id: 'assert-navigation-completed',
+            type: 'url_matches',
+            value: initialPath,
+            description: 'Initial navigation reached the requested route.',
+          }],
       evidence: {
         checkpoints: [
           {

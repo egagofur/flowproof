@@ -1,5 +1,6 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { ExecutionContext } from '../../core/contracts/context.js';
+import { describeTarget, resolveLocator } from '../playwright/locator-resolver.js';
 import { FlowStep, FlowAssertion } from '../../core/contracts/flow.js';
 import { AsidePromptTranslator } from './prompt-translator.js';
 
@@ -25,7 +26,7 @@ export class AsideDriver {
     };
 
     if (execContext.auth?.storageState) {
-      contextOptions.storageState = execContext.auth.storageState as any;
+      contextOptions.storageState = execContext.auth.storageState as NonNullable<Parameters<Browser['newContext']>[0]>['storageState'];
     }
 
     if (execContext.auth?.headers) {
@@ -69,20 +70,23 @@ export class AsideDriver {
     try {
       switch (step.action) {
         case 'navigate': {
-          const url = step.target?.startsWith('http')
-            ? step.target
-            : new URL(step.target || '/', execContext.baseUrl).toString();
+          const navigationTarget = typeof step.target === 'string' ? step.target : '/';
+          const url = navigationTarget.startsWith('http')
+            ? navigationTarget
+            : new URL(navigationTarget, execContext.baseUrl).toString();
           trajectory.push(`Navigating to ${url}`);
           await this.page.goto(url, { waitUntil: 'domcontentloaded' });
           break;
         }
 
         case 'click': {
-          const semanticTarget = step.target || '';
+          const semanticTarget = step.target ? describeTarget(step.target) : '';
           trajectory.push(`Locating clickable element for: ${semanticTarget}`);
 
           // Try semantic locators in priority order:
-          const locator = await this.findSemanticElement(semanticTarget, ['button', 'link', 'checkbox', 'radio']);
+          const locator = typeof step.target === 'object'
+            ? resolveLocator(this.page, step.target).first()
+            : await this.findSemanticElement(semanticTarget, ['button', 'link', 'checkbox', 'radio']);
           await locator.click({ timeout: 8000 });
           trajectory.push(`Clicked element matching intent`);
           break;
@@ -90,60 +94,52 @@ export class AsideDriver {
 
         case 'fill':
         case 'type': {
-          const semanticTarget = step.target || '';
+          const semanticTarget = step.target ? describeTarget(step.target) : '';
           const value = String(step.value ?? '');
           trajectory.push(`Locating input element for: ${semanticTarget} to fill '${value}'`);
 
-          const locator = await this.findSemanticInput(semanticTarget);
+          const locator = typeof step.target === 'object'
+            ? resolveLocator(this.page, step.target).first()
+            : await this.findSemanticInput(semanticTarget);
           await locator.fill(value, { timeout: 8000 });
           trajectory.push(`Filled input with value '${value}'`);
           break;
         }
 
-        case 'select': {
-          const semanticTarget = step.target || '';
-          const value = String(step.value ?? '');
+        case 'select':
+        case 'select_option':
+        case 'select_relation': {
+          const semanticTarget = step.target ? describeTarget(step.target) : '';
+          const details = typeof step.value === 'object' && step.value !== null ? step.value as Record<string, unknown> : {};
+          const value = String(details.option ?? details.name ?? step.value ?? '');
           trajectory.push(`Selecting option '${value}' on ${semanticTarget}`);
-          const loc = await this.findSemanticElement(semanticTarget, ['select', 'combobox', 'div']);
+          const loc = typeof step.target === 'object'
+            ? resolveLocator(this.page, step.target).first()
+            : await this.findSemanticElement(semanticTarget, ['combobox', 'listbox']);
           const tagName = await loc.evaluate((el) => el.tagName.toLowerCase()).catch(() => '');
-          if (tagName === 'select') {
+          if (step.action === 'select' && tagName === 'select') {
             await loc.selectOption(value, { timeout: 8000 });
           } else {
-            const selector = loc.locator('.ant-select-selector').first();
-            if (await selector.isVisible().catch(() => false)) {
-              await selector.click({ force: true });
-            } else {
-              await loc.click({ force: true });
-            }
-            await this.page.waitForTimeout(600);
-            const activeDropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').first();
-            const option = activeDropdown.locator(
-              `.ant-select-item-option:has-text("${value}"), [role="option"]:has-text("${value}"), .ant-select-item-option-content:has-text("${value}")`
-            ).first();
-            if (await option.isVisible().catch(() => false)) {
-              await option.click();
-            } else {
-              const firstOpt = activeDropdown.locator(
-                '.ant-select-item-option, [role="option"], .ant-select-item'
-              ).first();
-              if (await firstOpt.isVisible().catch(() => false)) {
-                await firstOpt.click();
-              }
-            }
-            await this.page.waitForTimeout(400);
+            await loc.click({ timeout: 8000 });
+            const option = this.page.getByRole('option', { name: value, exact: true }).last();
+            await option.waitFor({ state: 'visible', timeout: 8000 });
+            await option.click({ timeout: 8000 });
+            await option.waitFor({ state: 'hidden', timeout: 8000 });
           }
           trajectory.push(`Selected option '${value}'`);
           break;
         }
 
         case 'select_date': {
-          const semanticTarget = step.target || '';
+          const semanticTarget = step.target ? describeTarget(step.target) : '';
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
           const dateStr = tomorrow.toISOString().split('T')[0];
           trajectory.push(`Selecting date ${dateStr} for ${semanticTarget}`);
 
-          const locator = await this.findSemanticInput(semanticTarget);
+          const locator = typeof step.target === 'object'
+            ? resolveLocator(this.page, step.target).first()
+            : await this.findSemanticInput(semanticTarget);
           await locator.fill(dateStr, { timeout: 8000 });
           trajectory.push(`Date filled with '${dateStr}'`);
           break;
@@ -165,7 +161,9 @@ export class AsideDriver {
           const key = String(step.value || 'Enter');
           trajectory.push(`Pressing key '${key}' on target ${step.target || 'page'}`);
           if (step.target) {
-            const loc = await this.findSemanticElement(step.target, ['input', 'button']);
+            const loc = typeof step.target === 'object'
+                          ? resolveLocator(this.page, step.target).first()
+                          : await this.findSemanticElement(step.target, ['textbox', 'button']);
             await loc.press(key);
           } else {
             await this.page.keyboard.press(key);
@@ -219,19 +217,19 @@ export class AsideDriver {
 
       switch (assertion.type) {
         case 'element_visible': {
-          const loc = this.page.locator(assertion.target || 'body').first();
+          const loc = assertion.target ? resolveLocator(this.page, assertion.target).first() : this.page.locator('body');
           passed = await loc.isVisible({ timeout: 5000 }).catch(() => false);
           actual = passed ? 'visible' : 'hidden';
           break;
         }
         case 'element_hidden': {
-          const loc = this.page.locator(assertion.target || 'body').first();
+          const loc = assertion.target ? resolveLocator(this.page, assertion.target).first() : this.page.locator('body');
           passed = !(await loc.isVisible().catch(() => false));
           actual = passed ? 'hidden' : 'visible';
           break;
         }
         case 'text_contains': {
-          const loc = this.page.locator(assertion.target || 'body').first();
+          const loc = assertion.target ? resolveLocator(this.page, assertion.target).first() : this.page.locator('body');
           const text = (await loc.textContent().catch(() => '')) || '';
           passed = text.includes(String(assertion.value));
           actual = text.trim();
@@ -260,7 +258,7 @@ export class AsideDriver {
     }
   }
 
-  private async findSemanticElement(target: string, _roles: string[]) {
+  private async findSemanticElement(target: string, roles: string[]) {
     if (!this.page) throw new Error('Page not ready');
 
     // 1. If direct selector works
@@ -268,25 +266,15 @@ export class AsideDriver {
       return this.page.locator(target).first();
     }
 
-    // 2. If target is an Ant Design form field or hidden input inside select
-    const antdWrapper = this.page.locator(`.ant-select:has(${target}), .ant-form-item:has(${target}) .ant-select-selector, .ant-form-item:has(${target}) .ant-select`).first();
-    if (await antdWrapper.isVisible().catch(() => false)) {
-      return antdWrapper;
+    const textMatch = target.match(/['"]([^'"]+)['"]/)?.[1] || target;
+    for (const role of roles) {
+      const byRole = this.page.getByRole(role as Parameters<Page['getByRole']>[0], { name: textMatch, exact: false }).first();
+      if (await byRole.isVisible().catch(() => false)) return byRole;
     }
-
-    // 3. Extract inner text from target if contains quotes or :has-text()
-    const textMatch = target.match(/['"]([^'"]+)['"]/);
-    if (textMatch && textMatch[1]) {
-      const text = textMatch[1];
-      const byText = this.page.getByText(text, { exact: false }).first();
-      if (await byText.isVisible().catch(() => false)) {
-        return byText;
-      }
-      const byRole = this.page.getByRole('button', { name: new RegExp(text, 'i') }).first();
-      if (await byRole.isVisible().catch(() => false)) {
-        return byRole;
-      }
-    }
+    const byLabel = this.page.getByLabel(textMatch, { exact: false }).first();
+    if (await byLabel.isVisible().catch(() => false)) return byLabel;
+    const byText = this.page.getByText(textMatch, { exact: false }).first();
+    if (await byText.isVisible().catch(() => false)) return byText;
 
     // Fallback locator
     return this.page.locator(target).first();

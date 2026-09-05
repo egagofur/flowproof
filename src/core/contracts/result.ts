@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { FlowTarget } from './flow.js';
 
 export const VerificationStatusSchema = z.enum([
   'PROVEN',
@@ -35,7 +36,7 @@ export interface StepResult {
   id: string;
   index: number;
   action: string;
-  target?: string;
+  target?: FlowTarget;
   value?: unknown;
   status: 'passed' | 'failed' | 'skipped';
   durationMs: number;
@@ -46,7 +47,7 @@ export interface AssertionResult {
   id: string;
   index: number;
   type: string;
-  target?: string;
+  target?: FlowTarget;
   expected?: unknown;
   actual?: unknown;
   status: 'passed' | 'failed' | 'skipped';
@@ -60,9 +61,33 @@ export interface ArtifactManifest {
   screenshots: string[];
   trace?: string;
   video?: string;
+  pageHtml?: string;
+  accessibilitySnapshot?: string;
   consoleLog?: string;
   networkLog?: string;
   orchestratorLog?: string;
+}
+
+export type ErrorSource =
+  | 'pageerror'
+  | 'console'
+  | 'http'
+  | 'requestfailed'
+  | 'danger_notification'
+  | 'dialog';
+
+export interface RecordedError {
+  source: ErrorSource;
+  message: string;
+  time: string;
+  url?: string;
+  status?: number;
+  method?: string;
+  ignored?: boolean;
+}
+
+export interface PolicyViolation extends RecordedError {
+  rule: string;
 }
 
 export type RootCauseClassification =
@@ -113,6 +138,10 @@ export interface ExecutionResult {
   error?: string;
   rawConsoleLogs?: Array<{ type: string; text: string; time: string }>;
   rawNetworkErrors?: Array<{ url: string; status: number; method: string; error?: string }>;
+  recordedErrors?: RecordedError[];
+  policyViolations?: PolicyViolation[];
+  artifactWarnings?: string[];
+  generatedArtifacts?: Partial<ArtifactManifest>;
 }
 
 export interface VerificationResult {
@@ -133,5 +162,7 @@ export interface VerificationResult {
   assertions: AssertionResult[];
   artifacts: ArtifactManifest;
   error?: string;
+  policyViolations?: PolicyViolation[];
+  artifactWarnings?: string[];
   diagnostic?: DiagnosticAnalysis;
 }

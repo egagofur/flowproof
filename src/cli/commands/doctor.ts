@@ -95,7 +95,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<Doct
   for (const flow of flows) {
     for (const step of flow.steps) {
       if (step.action === 'custom') {
-        const name = step.customHandler || step.target;
+        const name = step.customHandler || (typeof step.target === 'string' ? step.target : undefined);
         if (!name || !config.customActions?.[name]) {
           missingHandlers.push(`${flow.id}: action ${name || '(unnamed)'}`);
         }
@@ -103,7 +103,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<Doct
     }
     for (const assertion of flow.assertions) {
       if (assertion.type === 'custom_assert') {
-        const name = assertion.customHandler || assertion.target;
+        const name = assertion.customHandler || (typeof assertion.target === 'string' ? assertion.target : undefined);
         if (!name || !config.customAssertions?.[name]) {
           missingHandlers.push(`${flow.id}: assertion ${name || '(unnamed)'}`);
         }
