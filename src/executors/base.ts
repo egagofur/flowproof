@@ -2,10 +2,13 @@ import { FlowDefinition } from '../core/contracts/flow.js';
 import { ExecutionContext } from '../core/contracts/context.js';
 import { ExecutionResult } from '../core/contracts/result.js';
 
+export type FailureCaptureResult = Pick<ExecutionResult, 'checkpoints' | 'artifactWarnings' | 'generatedArtifacts'>;
+
 export interface BrowserExecutor {
   readonly name: string;
   initialize(context: ExecutionContext): Promise<void>;
   execute(flow: FlowDefinition, context: ExecutionContext): Promise<ExecutionResult>;
+  captureFailureEvidence?(context: ExecutionContext): Promise<FailureCaptureResult>;
   cleanup(): Promise<void>;
 }
 

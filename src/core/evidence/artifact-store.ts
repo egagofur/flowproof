@@ -55,7 +55,7 @@ export class ArtifactStore {
       md += `## Steps Executed\n\n`;
       for (const step of result.steps) {
         const sStatus = step.status === 'passed' ? '✓' : step.status === 'failed' ? '✗' : '○';
-        const targetStr = step.target ? ` on \`${step.target}\`` : '';
+        const targetStr = step.target ? ` on \`${formatTarget(step.target)}\`` : '';
         const valueStr = step.value !== undefined ? ` with value: \`${JSON.stringify(step.value)}\`` : '';
         md += `- [${sStatus}] **Step ${step.index + 1} (${step.action})**${targetStr}${valueStr} (${step.durationMs}ms)\n`;
         if (step.error) {
@@ -69,12 +69,26 @@ export class ArtifactStore {
       md += `## Assertions Evaluated\n\n`;
       for (const assertion of result.assertions) {
         const aStatus = assertion.status === 'passed' ? '✓' : assertion.status === 'failed' ? '✗' : '○';
-        const targetStr = assertion.target ? ` on \`${assertion.target}\`` : '';
+        const targetStr = assertion.target ? ` on \`${formatTarget(assertion.target)}\`` : '';
         md += `- [${aStatus}] **${assertion.id} (${assertion.type})**${targetStr} (${assertion.durationMs}ms)\n`;
         if (assertion.error) {
           md += `  > **Failure:** ${assertion.error}\n`;
         }
       }
+      md += `\n`;
+    }
+
+    if (result.policyViolations?.length) {
+      md += `## Error Policy Violations\n\n`;
+      for (const violation of result.policyViolations) {
+        md += `- **${violation.rule}** (${violation.source}): ${violation.message}\n`;
+      }
+      md += `\n`;
+    }
+
+    if (result.artifactWarnings?.length) {
+      md += `## Artifact Warnings\n\n`;
+      for (const warning of result.artifactWarnings) md += `- ${warning}\n`;
       md += `\n`;
     }
 
@@ -100,6 +114,8 @@ export class ArtifactStore {
       if (result.artifacts.trace) {
         md += `- 📦 Playwright Trace: [${path.basename(result.artifacts.trace)}](${result.artifacts.trace})\n`;
       }
+      if (result.artifacts.pageHtml) md += `- 📄 Page HTML: [page.html](${result.artifacts.pageHtml})\n`;
+      if (result.artifacts.accessibilitySnapshot) md += `- ♿ Accessibility snapshot: [accessibility.json](${result.artifacts.accessibilitySnapshot})\n`;
       md += `\n`;
     }
 
@@ -118,4 +134,8 @@ export class ArtifactStore {
     await fs.writeFile(filePath, content, 'utf-8');
     return filePath;
   }
+}
+
+function formatTarget(target: unknown): string {
+  return typeof target === 'string' ? target : JSON.stringify(target);
 }

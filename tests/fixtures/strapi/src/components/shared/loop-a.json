@@ -1,0 +1,6 @@
+{
+  "info": { "displayName": "Loop A" },
+  "attributes": {
+    "next": { "type": "component", "component": "shared.loop-b", "repeatable": false }
+  }
+}

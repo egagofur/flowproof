@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "articles",
+  "info": {
+    "singularName": "article",
+    "pluralName": "articles",
+    "displayName": "Article"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": { "i18n": { "localized": true } },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "pluginOptions": { "i18n": { "localized": true } }
+    },
+    "cover": { "type": "media", "multiple": false },
+    "sections": { "type": "component", "component": "shared.section", "repeatable": true },
+    "rating": { "type": "customField", "customField": "plugin::rating.stars" },
+    "featuredIn": { "type": "relation", "relation": "oneToOne", "target": "api::homepage.homepage" },
+    "comments": { "type": "relation", "relation": "oneToMany", "target": "api::comment.comment" },
+    "author": { "type": "relation", "relation": "manyToOne", "target": "api::author.author" },
+    "categories": { "type": "relation", "relation": "manyToMany", "target": "api::category.category" },
+    "owner": { "type": "relation", "relation": "morphToOne" },
+    "subjects": { "type": "relation", "relation": "morphToMany" },
+    "heroFor": { "type": "relation", "relation": "morphOne", "target": "api::homepage.homepage" },
+    "usedBy": { "type": "relation", "relation": "morphMany", "target": "api::homepage.homepage" }
+  }
+}

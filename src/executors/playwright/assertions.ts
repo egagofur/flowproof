@@ -1,6 +1,7 @@
-import { Page } from 'playwright';
-import { FlowAssertion } from '../../core/contracts/flow.js';
-import { ExecutionContext } from '../../core/contracts/context.js';
+import type { Page } from 'playwright';
+import type { FlowAssertion } from '../../core/contracts/flow.js';
+import type { ExecutionContext } from '../../core/contracts/context.js';
+import { describeTarget, resolveLocator } from './locator-resolver.js';
 
 export type CustomAssertionHandler = (
   page: Page,
@@ -9,7 +10,7 @@ export type CustomAssertionHandler = (
 ) => Promise<{ passed: boolean; actual?: unknown; error?: string }>;
 
 export class PlaywrightAssertionRunner {
-  private customHandlers: Map<string, CustomAssertionHandler> = new Map();
+  private customHandlers = new Map<string, CustomAssertionHandler>();
 
   public registerCustomHandler(name: string, handler: CustomAssertionHandler): void {
     this.customHandlers.set(name, handler);
@@ -21,151 +22,99 @@ export class PlaywrightAssertionRunner {
     context: ExecutionContext
   ): Promise<{ passed: boolean; actual?: unknown; error?: string }> {
     const timeout = assertion.timeoutMs || context.options.timeoutMs || 10000;
+    const target = assertion.target;
 
     switch (assertion.type) {
       case 'element_visible': {
-        if (!assertion.target) throw new Error(`Assertion 'element_visible' requires a 'target' selector`);
-        const locator = page.locator(assertion.target);
+        if (!target) throw required(assertion.type);
+        const locator = resolveLocator(page, target);
         try {
           await locator.waitFor({ state: 'visible', timeout });
-          const isVis = await locator.isVisible();
-          return { passed: isVis, actual: isVis ? 'visible' : 'hidden' };
-        } catch (err: any) {
-          return {
-            passed: false,
-            actual: 'hidden or not found',
-            error: `Element '${assertion.target}' was not visible within ${timeout}ms: ${err.message}`,
-          };
+          const visible = await locator.isVisible();
+          return { passed: visible, actual: visible ? 'visible' : 'hidden' };
+        } catch (error) {
+          return failure('hidden or not found', `Element '${describeTarget(target)}' was not visible within ${timeout}ms: ${message(error)}`);
         }
       }
-
       case 'element_hidden': {
-        if (!assertion.target) throw new Error(`Assertion 'element_hidden' requires a 'target' selector`);
-        const locator = page.locator(assertion.target);
+        if (!target) throw required(assertion.type);
+        const locator = resolveLocator(page, target);
         try {
           await locator.waitFor({ state: 'hidden', timeout });
-          const isHidden = !(await locator.isVisible());
-          return { passed: isHidden, actual: isHidden ? 'hidden' : 'visible' };
-        } catch (err: any) {
-          return {
-            passed: false,
-            actual: 'visible',
-            error: `Element '${assertion.target}' remained visible after ${timeout}ms: ${err.message}`,
-          };
+          const hidden = !(await locator.isVisible());
+          return { passed: hidden, actual: hidden ? 'hidden' : 'visible' };
+        } catch (error) {
+          return failure('visible', `Element '${describeTarget(target)}' remained visible after ${timeout}ms: ${message(error)}`);
         }
       }
-
-      case 'text_contains': {
-        if (!assertion.target) throw new Error(`Assertion 'text_contains' requires a 'target' selector`);
-        const locator = page.locator(assertion.target);
-        await locator.waitFor({ state: 'attached', timeout });
-        const text = await locator.textContent();
-        const expected = String(assertion.value ?? '');
-        const actual = text || '';
-        const passed = actual.includes(expected);
-        return {
-          passed,
-          actual,
-          error: passed
-            ? undefined
-            : `Expected text containing '${expected}', but got '${actual.trim()}'`,
-        };
-      }
-
+      case 'text_contains':
       case 'text_equals': {
-        if (!assertion.target) throw new Error(`Assertion 'text_equals' requires a 'target' selector`);
-        const locator = page.locator(assertion.target);
+        if (!target) throw required(assertion.type);
+        const locator = resolveLocator(page, target);
         await locator.waitFor({ state: 'attached', timeout });
-        const text = await locator.textContent();
+        const exact = assertion.type === 'text_equals';
+        const actual = ((await locator.textContent()) || '').trim();
         const expected = String(assertion.value ?? '').trim();
-        const actual = (text || '').trim();
-        const passed = actual === expected;
-        return {
-          passed,
-          actual,
-          error: passed
-            ? undefined
-            : `Expected exact text '${expected}', but got '${actual}'`,
-        };
+        const passed = exact ? actual === expected : actual.includes(expected);
+        return passed
+          ? { passed, actual }
+          : failure(actual, exact
+            ? `Expected exact text '${expected}', but got '${actual}'`
+            : `Expected text containing '${expected}', but got '${actual}'`);
       }
-
       case 'url_matches': {
-        const expected = String(assertion.value ?? assertion.target ?? '');
+        const expected = String(assertion.value ?? (typeof target === 'string' ? target : '') ?? '');
         const currentUrl = page.url();
-        const isRegex = expected.startsWith('/') && expected.endsWith('/');
-        const regex = isRegex ? new RegExp(expected.slice(1, -1)) : new RegExp(expected);
-        const passed = regex.test(currentUrl);
-        return {
-          passed,
-          actual: currentUrl,
-          error: passed
-            ? undefined
-            : `Expected URL matching '${expected}', but got '${currentUrl}'`,
-        };
+        const source = expected.startsWith('/') && expected.endsWith('/') ? expected.slice(1, -1) : expected;
+        const passed = new RegExp(source).test(currentUrl);
+        return passed ? { passed, actual: currentUrl } : failure(currentUrl, `Expected URL matching '${expected}', but got '${currentUrl}'`);
       }
-
       case 'attribute_equals': {
-        if (!assertion.target || !assertion.attribute) {
-          throw new Error(`Assertion 'attribute_equals' requires 'target' and 'attribute'`);
-        }
-        const locator = page.locator(assertion.target);
+        if (!target || !assertion.attribute) throw new Error(`Assertion 'attribute_equals' requires 'target' and 'attribute'`);
+        const locator = resolveLocator(page, target);
         await locator.waitFor({ state: 'attached', timeout });
         const actual = await locator.getAttribute(assertion.attribute);
         const expected = String(assertion.value ?? '');
         const passed = actual === expected;
-        return {
-          passed,
-          actual,
-          error: passed
-            ? undefined
-            : `Expected attribute '${assertion.attribute}' to equal '${expected}', but got '${actual}'`,
-        };
+        return passed ? { passed, actual } : failure(actual, `Expected attribute '${assertion.attribute}' to equal '${expected}', but got '${actual}'`);
       }
-
       case 'value_equals': {
-        if (!assertion.target) throw new Error(`Assertion 'value_equals' requires a 'target' selector`);
-        const locator = page.locator(assertion.target);
+        if (!target) throw required(assertion.type);
+        const locator = resolveLocator(page, target);
         await locator.waitFor({ state: 'attached', timeout });
         const actual = await locator.inputValue();
         const expected = String(assertion.value ?? '');
         const passed = actual === expected;
-        return {
-          passed,
-          actual,
-          error: passed
-            ? undefined
-            : `Expected input value '${expected}', but got '${actual}'`,
-        };
+        return passed ? { passed, actual } : failure(actual, `Expected input value '${expected}', but got '${actual}'`);
       }
-
       case 'element_count': {
-        if (!assertion.target) throw new Error(`Assertion 'element_count' requires a 'target' selector`);
-        const count = await page.locator(assertion.target).count();
+        if (!target) throw required(assertion.type);
+        const count = await resolveLocator(page, target).count();
         const expected = assertion.count ?? Number(assertion.value ?? 0);
         const passed = count === expected;
-        return {
-          passed,
-          actual: count,
-          error: passed
-            ? undefined
-            : `Expected element count of ${expected} for '${assertion.target}', but counted ${count}`,
-        };
+        return passed ? { passed, actual: count } : failure(count, `Expected element count of ${expected} for '${describeTarget(target)}', but counted ${count}`);
       }
-
       case 'custom_assert': {
-        const handlerName = assertion.customHandler || assertion.target;
-        if (!handlerName) {
-          throw new Error(`Custom assertion requires a 'customHandler' or 'target' name`);
-        }
+        const handlerName = assertion.customHandler || (typeof target === 'string' ? target : undefined);
+        if (!handlerName) throw new Error(`Custom assertion requires a 'customHandler' or string 'target' name`);
         const handler = this.customHandlers.get(handlerName);
-        if (!handler) {
-          throw new Error(`Custom assertion handler '${handlerName}' is not registered`);
-        }
+        if (!handler) throw new Error(`Custom assertion handler '${handlerName}' is not registered`);
         return handler(page, assertion, context);
       }
-
       default:
-        throw new Error(`Unsupported assertion type: ${(assertion as any).type}`);
+        throw new Error(`Unsupported assertion type: ${(assertion as { type: string }).type}`);
     }
   }
+}
+
+function required(type: string): Error {
+  return new Error(`Assertion '${type}' requires a 'target'`);
+}
+
+function failure(actual: unknown, error: string) {
+  return { passed: false, actual, error };
+}
+
+function message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

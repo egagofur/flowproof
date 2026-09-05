@@ -1,0 +1,8 @@
+{
+  "collectionName": "components_shared_seos",
+  "info": { "displayName": "SEO" },
+  "attributes": {
+    "metaTitle": { "type": "string", "required": true },
+    "recursive": { "type": "component", "component": "shared.loop-a", "repeatable": false }
+  }
+}

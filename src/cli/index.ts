@@ -8,6 +8,7 @@ import { evidenceCommand } from './commands/evidence.js';
 import { pruneCommand } from './commands/prune.js';
 import { createRecordCommand } from './commands/record.js';
 import { doctorCommand } from './commands/doctor.js';
+import { generateCommand } from './commands/generate.js';
 
 export function createCli(): Command {
   const program = new Command();
@@ -18,6 +19,26 @@ export function createCli(): Command {
     .version('0.1.0');
 
   program.addCommand(createRecordCommand());
+
+  program
+    .command('generate')
+    .description('Generate deterministic draft flows from an application schema')
+    .requiredOption('--adapter <adapter>', 'Schema adapter (strapi)')
+    .option('--dir <dir>', 'Schema project directory', '.')
+    .option('--output-dir <dir>', 'Generated flow output directory')
+    .option('--manifest-path <path>', 'Generated manifest path')
+    .option('--json', 'Output machine-readable generation report')
+    .option('--dry-run', 'Build the manifest and report without writing files')
+    .action(async (options) => {
+      await generateCommand({
+        adapter: options.adapter,
+        dir: options.dir,
+        outputDir: options.outputDir,
+        manifestPath: options.manifestPath,
+        json: options.json,
+        write: options.dryRun ? false : true,
+      });
+    });
 
   program
     .command('init')

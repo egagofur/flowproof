@@ -58,6 +58,8 @@ export class EvidenceManager {
       flowId,
       baseUrl,
       env: process.env as Record<string, string>,
+      variables: {},
+      secretVariableNames: [],
       artifactsDir: executionArtifactsDir,
       evidenceDir,
       tracesDir,
@@ -104,7 +106,7 @@ export class EvidenceManager {
   ): Promise<{ consoleLog?: string; networkLog?: string; orchestratorLog?: string }> {
     const result: { consoleLog?: string; networkLog?: string; orchestratorLog?: string } = {};
 
-    if (consoleLogs.length > 0) {
+    {
       const consolePath = path.join(context.logsDir, 'console.log');
       const text = consoleLogs
         .map((l) => `[${l.time}] [${l.type.toUpperCase()}] ${this.redactor.redact(l.text)}`)
@@ -113,7 +115,7 @@ export class EvidenceManager {
       result.consoleLog = path.join('logs', 'console.log');
     }
 
-    if (networkErrors.length > 0) {
+    {
       const networkPath = path.join(context.logsDir, 'network.log');
       const text = networkErrors
         .map(

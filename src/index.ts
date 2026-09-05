@@ -6,6 +6,7 @@ export * from './core/contracts/lifecycle.js';
 
 // Parser & Loader
 export * from './core/parser/flow-loader.js';
+export * from './core/runtime/interpolation.js';
 
 // Security & Evidence
 export * from './core/security/secret-redactor.js';
@@ -20,6 +21,8 @@ export * from './executors/base.js';
 export * from './executors/playwright/playwright-executor.js';
 export * from './executors/playwright/actions.js';
 export * from './executors/playwright/assertions.js';
+export * from './executors/playwright/locator-resolver.js';
+export * from './executors/playwright/error-policy.js';
 export * from './executors/aside/aside-executor.js';
 export * from './executors/aside/aside-driver.js';
 export * from './executors/aside/prompt-translator.js';
@@ -32,6 +35,7 @@ export * from './adapter/detector.js';
 export * from './adapter/templates/generic.js';
 export * from './adapter/templates/nextjs.js';
 export * from './adapter/templates/vite.js';
+export * from './adapter/strapi/index.js';
 export * from './adapter/auth/base.js';
 export * from './adapter/auth/password-auth.js';
 export * from './adapter/auth/session-auth.js';
@@ -63,6 +67,8 @@ export { evidenceCommand } from './cli/commands/evidence.js';
 export { pruneCommand } from './cli/commands/prune.js';
 export { createRecordCommand } from './cli/commands/record.js';
 export { doctorCommand } from './cli/commands/doctor.js';
+export { generateCommand, runGenerateCommand } from './cli/commands/generate.js';
+export type { GenerateCommandOptions, GenerateAdapter } from './cli/commands/generate.js';
 
 // CLI
 export { createCli, runCli } from './cli/index.js';
