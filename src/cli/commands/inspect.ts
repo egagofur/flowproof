@@ -7,6 +7,7 @@ import { VerificationResult } from '../../core/contracts/result.js';
 export interface InspectCommandOptions {
   json?: boolean;
   config?: string;
+  suggestFix?: boolean;
 }
 
 export async function inspectCommand(executionId: string, options: InspectCommandOptions): Promise<void> {
@@ -44,6 +45,28 @@ export async function inspectCommand(executionId: string, options: InspectComman
         console.log(`\n  Recommendations:`);
         for (const rec of result.diagnostic.recommendations) {
           console.log(`    ${pc.dim('•')} ${rec}`);
+        }
+      }
+    }
+
+    if (options.suggestFix) {
+      const suggestion = result.diagnostic?.staleSuggestion;
+      console.log(pc.bold('\nStale Flow Suggestion:'));
+      if (!suggestion) {
+        console.log(`  ${pc.dim('No stale selector or assertion change was detected.')}`);
+      } else {
+        console.log(`  Confidence: ${pc.green(`${(suggestion.confidence * 100).toFixed(0)}%`)}`);
+        if (suggestion.reason) {
+          console.log(`  Reason:     ${suggestion.reason}`);
+        }
+        for (const change of suggestion.changes || []) {
+          console.log(`\n  ${pc.bold(`${change.subject} ${change.id}`)}`);
+          console.log(`  Current:   ${pc.red(change.current)}`);
+          console.log(`  Suggested: ${pc.green(change.suggested)}`);
+        }
+        if (suggestion.proposedPatch) {
+          console.log(pc.bold('\nProposed flow YAML:\n'));
+          console.log(suggestion.proposedPatch);
         }
       }
     }

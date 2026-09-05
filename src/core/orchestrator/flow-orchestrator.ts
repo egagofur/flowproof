@@ -10,8 +10,8 @@ import { ProjectConfig } from '../../adapter/config.js';
 import { EvidenceManager } from '../evidence/evidence-manager.js';
 import { SecretRedactor } from '../security/secret-redactor.js';
 import { ExecutorRegistry } from '../../executors/base.js';
-import { PlaywrightExecutor } from '../../executors/playwright/playwright-executor.js';
 import { ResultAnalyzer } from '../../ai/analyzer/result-analyzer.js';
+import { StaleFlowDetector } from '../../ai/stale/stale-detector.js';
 
 export interface OrchestratorOptions {
   config: ProjectConfig;
@@ -53,7 +53,7 @@ export class FlowOrchestrator {
         overrideOptions.executor ||
         flow.execution?.preferred ||
         this.config.defaultExecutor ||
-        process.env.FLOWPROOF_BROWSER_EXECUTOR ||
+        process.env.INTENTPROOF_BROWSER_EXECUTOR ||
         'playwright',
     };
 
@@ -63,11 +63,8 @@ export class FlowOrchestrator {
       this.config.baseUrl,
       mergedOptions
     );
-
-    // Call beforeFlow hook
-    if (this.config.hooks?.beforeFlow) {
-      await this.config.hooks.beforeFlow(flow);
-    }
+    context.customActions = this.config.customActions;
+    context.customAssertions = this.config.customAssertions;
 
     const startTime = new Date().toISOString();
     const startMs = Date.now();
@@ -75,32 +72,41 @@ export class FlowOrchestrator {
     let verificationStatus: VerificationStatus = 'PROVEN';
     let fatalError: string | undefined;
 
-    // 2. Authentication Resolution
     try {
-      for (const precondition of flow.preconditions) {
-        if (precondition.authenticated_as) {
-          const role = precondition.authenticated_as;
-          const authStrategy = this.config.auth?.[role];
-
-          if (!authStrategy) {
-            verificationStatus = 'BLOCKED';
-            fatalError = `No AuthStrategy registered for role '${role}' in flowproof.config`;
-            break;
-          }
-
-          const authResult = await authStrategy.authenticate(context, role);
-          if (!authResult.success) {
-            verificationStatus = 'BLOCKED';
-            fatalError = `Authentication failed for role '${role}': ${authResult.error}`;
-            break;
-          }
-
-          context.auth = authResult.credentials;
-        }
-      }
+      await this.config.hooks?.beforeFlow?.(flow);
     } catch (err: any) {
       verificationStatus = 'BLOCKED';
-      fatalError = `Authentication precondition error: ${err.message}`;
+      fatalError = `beforeFlow hook failed: ${err.message}`;
+    }
+
+    // 2. Authentication Resolution
+    if (verificationStatus !== 'BLOCKED') {
+      try {
+        for (const precondition of flow.preconditions) {
+          if (precondition.authenticated_as) {
+            const role = precondition.authenticated_as;
+            const authStrategy = this.config.auth?.[role];
+
+            if (!authStrategy) {
+              verificationStatus = 'BLOCKED';
+              fatalError = `No AuthStrategy registered for role '${role}' in intentproof.config`;
+              break;
+            }
+
+            const authResult = await authStrategy.authenticate(context, role);
+            if (!authResult.success) {
+              verificationStatus = 'BLOCKED';
+              fatalError = `Authentication failed for role '${role}': ${authResult.error}`;
+              break;
+            }
+
+            context.auth = authResult.credentials;
+          }
+        }
+      } catch (err: any) {
+        verificationStatus = 'BLOCKED';
+        fatalError = `Authentication precondition error: ${err.message}`;
+      }
     }
 
     let rawExecutionResult = {
@@ -120,32 +126,31 @@ export class FlowOrchestrator {
     // 3. Browser Execution Dispatch (if not BLOCKED)
     if (verificationStatus !== 'BLOCKED') {
       const executorName = mergedOptions.executor || 'playwright';
-      const executor = ExecutorRegistry.get(executorName);
-
-      // Register project custom handlers if PlaywrightExecutor
-      if (executor instanceof PlaywrightExecutor) {
-        if (this.config.customActions) {
-          for (const [name, handler] of Object.entries(this.config.customActions)) {
-            executor.actionRunner.registerCustomHandler(name, handler);
-          }
-        }
-        if (this.config.customAssertions) {
-          for (const [name, handler] of Object.entries(this.config.customAssertions)) {
-            executor.assertionRunner.registerCustomHandler(name, handler);
-          }
-        }
-      }
-
-      await executor.initialize(context);
+      let executor;
+      let initialized = false;
       try {
+        executor = ExecutorRegistry.get(executorName);
+        await executor.initialize(context);
+        initialized = true;
         rawExecutionResult = await executor.execute(flow, context);
         verificationStatus = rawExecutionResult.status;
         fatalError = rawExecutionResult.error;
       } catch (err: any) {
-        verificationStatus = 'FAILED';
-        fatalError = `Executor encountered unexpected crash: ${err.message}`;
+        verificationStatus = initialized ? 'INCONCLUSIVE' : 'BLOCKED';
+        fatalError = initialized
+          ? `Executor encountered an unexpected error: ${err.message}`
+          : `Executor initialization failed: ${err.message}`;
       } finally {
-        await executor.cleanup();
+        if (executor) {
+          try {
+            await executor.cleanup();
+          } catch (err: any) {
+            verificationStatus = 'INCONCLUSIVE';
+            fatalError = [fatalError, `Executor cleanup failed: ${err.message}`]
+              .filter(Boolean)
+              .join(' ');
+          }
+        }
       }
     }
 
@@ -206,17 +211,26 @@ export class FlowOrchestrator {
       error: fatalError,
     };
 
+    try {
+      await this.config.hooks?.afterFlow?.(flow, result);
+    } catch (err: any) {
+      result.status = 'INCONCLUSIVE';
+      result.error = [result.error, `afterFlow hook failed: ${err.message}`]
+        .filter(Boolean)
+        .join(' ');
+    }
+
     // 7. Post-Execution AI Diagnostic Analysis
     const diagnostic = ResultAnalyzer.analyze(flow, result);
+    const staleSuggestion = StaleFlowDetector.detect(flow, result);
+    if (staleSuggestion.isStale) {
+      diagnostic.staleSuggestion = staleSuggestion;
+      diagnostic.stalePatchSuggestion = staleSuggestion.proposedPatch;
+    }
     result.diagnostic = diagnostic;
 
     // 8. Persist Final Artifacts
     result = await this.evidenceManager.finalizeExecutionResult(context, result);
-
-    // Call afterFlow hook
-    if (this.config.hooks?.afterFlow) {
-      await this.config.hooks.afterFlow(flow, result);
-    }
 
     return result;
   }

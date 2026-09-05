@@ -1,12 +1,12 @@
 import YAML from 'yaml';
 import { FlowDefinition } from '../../core/contracts/flow.js';
-import { VerificationResult } from '../../core/contracts/result.js';
+import {
+  StaleFlowChange,
+  StaleFlowSuggestion,
+  VerificationResult,
+} from '../../core/contracts/result.js';
 
-export interface StaleFlowDetectionResult {
-  isStale: boolean;
-  confidence: number;
-  reason?: string;
-  proposedPatch?: string;
+export interface StaleFlowDetectionResult extends StaleFlowSuggestion {
   proposedFlow?: FlowDefinition;
 }
 
@@ -40,14 +40,16 @@ export class StaleFlowDetector {
       const stepIndex = failedStep.index;
       const originalTarget = failedStep.target;
 
-      // Suggest alternative semantic selector
-      let suggestedTarget = originalTarget;
-      if (originalTarget.includes(':has-text(')) {
-        // e.g. "button:has-text('Submit')"
-        suggestedTarget = originalTarget;
-      } else if (originalTarget.includes('[name=')) {
-        suggestedTarget = originalTarget;
-      }
+      const suggestedTarget = this.suggestSemanticSelector(originalTarget);
+      const changes: StaleFlowChange[] = [
+        {
+          subject: 'step',
+          id: failedStep.id,
+          field: 'target',
+          current: originalTarget,
+          suggested: suggestedTarget,
+        },
+      ];
 
       // Clone flow and update target
       const proposedFlow: FlowDefinition = JSON.parse(JSON.stringify(flow));
@@ -61,6 +63,7 @@ export class StaleFlowDetector {
         isStale: true,
         confidence: 0.86,
         reason: `Step ${stepIndex + 1} target '${originalTarget}' could not be located. The UI element selector may have changed.`,
+        changes,
         proposedPatch: proposedYaml,
         proposedFlow,
       };
@@ -82,6 +85,15 @@ export class StaleFlowDetector {
         isStale: true,
         confidence: 0.82,
         reason: `Assertion '${failedAssertion.id}' expected '${failedAssertion.expected}', but page contains '${actualText}'. Text copy may have been updated.`,
+        changes: [
+          {
+            subject: 'assertion',
+            id: failedAssertion.id,
+            field: 'value',
+            current: String(failedAssertion.expected ?? ''),
+            suggested: actualText,
+          },
+        ],
         proposedPatch: proposedYaml,
         proposedFlow,
       };
@@ -92,5 +104,23 @@ export class StaleFlowDetector {
       confidence: 0.7,
       reason: 'Failure appears to be a functional logic defect rather than a stale selector.',
     };
+  }
+
+  private static suggestSemanticSelector(target: string): string {
+    const textSelector = target.match(
+      /^([a-z][\w-]*):has-text\((['"])(.+)\2\)$/i
+    );
+    if (!textSelector) {
+      return target;
+    }
+
+    const [, tag, , text] = textSelector;
+    const roleByTag: Record<string, string> = {
+      a: 'link',
+      button: 'button',
+      input: 'textbox',
+    };
+    const role = roleByTag[tag.toLowerCase()];
+    return role ? `role=${role}[name="${text}"]` : `text="${text}"`;
   }
 }

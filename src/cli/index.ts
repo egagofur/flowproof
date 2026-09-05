@@ -7,6 +7,7 @@ import { inspectCommand } from './commands/inspect.js';
 import { evidenceCommand } from './commands/evidence.js';
 import { pruneCommand } from './commands/prune.js';
 import { createRecordCommand } from './commands/record.js';
+import { doctorCommand } from './commands/doctor.js';
 
 export function createCli(): Command {
   const program = new Command();
@@ -59,14 +60,15 @@ export function createCli(): Command {
   program
     .command('inspect <executionId>')
     .description('View AI diagnostic analysis and root cause classification for an execution')
-    .option('--config <path>', 'Custom path to flowproof.config.ts')
+    .option('--config <path>', 'Custom path to intentproof.config.ts')
+    .option('--suggest-fix', 'Show a proposed flow update for stale selectors or assertions')
     .option('--json', 'Output machine-readable JSON')
     .action(inspectCommand);
 
   program
     .command('evidence <executionId>')
     .description('List and inspect visual evidence artifacts for an execution')
-    .option('--config <path>', 'Custom path to flowproof.config.ts')
+    .option('--config <path>', 'Custom path to intentproof.config.ts')
     .option('--json', 'Output machine-readable JSON')
     .action(evidenceCommand);
 
@@ -76,6 +78,15 @@ export function createCli(): Command {
     .option('--days <days>', 'Override retention days')
     .option('--json', 'Output machine-readable JSON')
     .action(pruneCommand);
+
+  program
+    .command('doctor')
+    .description('Validate configuration, flows, executors, browser, and project connectivity')
+    .option('--config <path>', 'Custom path to intentproof.config.ts')
+    .option('--json', 'Output machine-readable JSON')
+    .action(async (options) => {
+      await doctorCommand(options);
+    });
 
   return program;
 }

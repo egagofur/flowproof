@@ -8,7 +8,7 @@ describe('FlowMapper', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'flowproof-mapper-test-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'intentproof-mapper-test-'));
   });
 
   afterEach(async () => {

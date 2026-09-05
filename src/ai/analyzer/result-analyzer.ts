@@ -49,7 +49,21 @@ export class ResultAnalyzer {
         confidence: 0.95,
         recommendations: [
           'Check application server availability at target baseUrl.',
-          'Verify test role credentials and authentication strategy in flowproof.config.',
+          'Verify test role credentials and authentication strategy in intentproof.config.',
+        ],
+        evidenceReferences,
+        affectedFeatures: flow.tags,
+      };
+    }
+
+    if (result.status === 'INCONCLUSIVE') {
+      return {
+        summary: `Verification was inconclusive: ${result.error || 'The execution could not determine application correctness'}.`,
+        failureReason: result.error,
+        rootCauseClassification: 'unknown',
+        confidence: 0.7,
+        recommendations: [
+          'Inspect executor and orchestrator logs, then retry the flow.',
         ],
         evidenceReferences,
         affectedFeatures: flow.tags,
@@ -77,7 +91,7 @@ export class ResultAnalyzer {
         summary = `Step ${failedStep.index + 1} failed to interact with '${failedStep.target}'. Possible UI drift or renamed component.`;
         recommendations.push(
           `Inspect element '${failedStep.target}' in checkpoint screenshot.`,
-          'Run `flowproof inspect` or check if the button/input selector was updated in recent commits.'
+          'Run `intentproof inspect` or check if the button/input selector was updated in recent commits.'
         );
       } else if (isTimeout) {
         classification = 'flaky_timeout';

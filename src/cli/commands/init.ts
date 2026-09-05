@@ -26,7 +26,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
   const configPath = path.join(projectDir, 'intentproof.config.ts');
   const flowsDir = path.join(projectDir, 'flows');
 
-  if (analysis.hasFlowproofConfig && !options.force) {
+  if (analysis.hasIntentproofConfig && !options.force) {
     if (options.json) {
       console.log(JSON.stringify({ error: 'Project already contains an Intentproof configuration. Use --force to overwrite.' }, null, 2));
     } else {
@@ -97,7 +97,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
           },
         ],
       },
-      source: ['flowproof.init'],
+      source: ['intentproof.init'],
       confidence: 1.0,
     };
 
@@ -115,7 +115,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     } catch {}
 
     if (!gitignore.includes('artifacts/')) {
-      const addition = '\n# Flowproof artifacts\nartifacts/\n.flowproof*/\n';
+      const addition = '\n# Intentproof artifacts\nartifacts/\n.intentproof*/\n';
       await fs.writeFile(gitignorePath, `${gitignore}${addition}`, 'utf-8');
     }
   } catch {}
@@ -139,7 +139,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     return;
   }
 
-  console.log(pc.bold(pc.green('\n🎉 Flowproof successfully initialized!')));
+  console.log(pc.bold(pc.green('\n🎉 Intentproof successfully initialized!')));
   console.log(pc.dim('──────────────────────────────────────────────────'));
   console.log(`Framework:    ${pc.cyan(analysis.framework.toUpperCase())}`);
   console.log(`Target URL:   ${pc.cyan(baseUrl)}`);
@@ -152,7 +152,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
 
   console.log(pc.bold('\nNext Steps:'));
   console.log(`  1. Start your local app server at ${pc.cyan(baseUrl)}`);
-  console.log(`  2. List available flows: ${pc.cyan('npx flowproof flows')}`);
-  console.log(`  3. Run your first verification: ${pc.cyan('npx flowproof verify')}`);
+  console.log(`  2. List available flows: ${pc.cyan('npx intentproof flows')}`);
+  console.log(`  3. Run your first verification: ${pc.cyan('npx intentproof verify')}`);
   console.log(pc.dim('──────────────────────────────────────────────────\n'));
 }

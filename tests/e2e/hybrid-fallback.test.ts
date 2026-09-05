@@ -5,7 +5,6 @@ import { createRemoteWorkServer } from '../../examples/remote-work-app/server.js
 import { FlowDefinition } from '../../src/core/contracts/flow.js';
 import { FlowOrchestrator } from '../../src/core/orchestrator/flow-orchestrator.js';
 import { AdapterRegistry } from '../../src/adapter/registry.js';
-import { HybridExecutor } from '../../src/executors/hybrid.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,10 +96,84 @@ describe('Hybrid Executor & Aside Adaptive Fallback', () => {
       headless: true,
     });
 
-    expect(result.status).toBe('PROVEN');
+    expect(result.status, result.error).toBe('PROVEN');
     expect(result.executor).toBe('aside');
     expect(result.passedSteps).toBe(4);
     expect(result.passedAssertions).toBe(1);
     expect(result.checkpoints[0].evidence.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('passes project custom handlers to Playwright inside Hybrid', async () => {
+    const config = await AdapterRegistry.loadConfig(exampleAppDir, 'intentproof.config.ts');
+    config.baseUrl = serverHandle.url;
+    config.defaultExecutor = 'hybrid';
+    config.customActions = {
+      fill_reason: async (page) => {
+        await page.fill('textarea#request-reason', 'Hybrid custom handler request');
+      },
+    };
+    config.customAssertions = {
+      request_visible: async (page) => {
+        const table = page.locator('table#requests-table');
+        await table.getByText('Hybrid custom handler request').waitFor();
+        const text = await table.textContent();
+        const passed = text?.includes('Hybrid custom handler request') ?? false;
+        return { passed, actual: text };
+      },
+    };
+
+    const flow: FlowDefinition = {
+      id: 'employee.remote-request.hybrid-custom',
+      name: 'Hybrid Custom Handlers',
+      priority: 'high',
+      roles: ['employee'],
+      tags: ['hybrid'],
+      preconditions: [
+        { authenticated_as: 'employee' },
+        { route: '/remote-requests' },
+      ],
+      steps: [
+        {
+          id: 'open-request',
+          action: 'click',
+          target: "button:has-text('New Request')",
+        },
+        {
+          id: 'fill-reason',
+          action: 'custom',
+          customHandler: 'fill_reason',
+        },
+        {
+          id: 'fill-date',
+          action: 'select_date',
+          target: 'input#request-date',
+          value: 'tomorrow',
+        },
+        {
+          id: 'submit-request',
+          action: 'submit',
+          target: 'button#btn-submit-request',
+        },
+      ],
+      assertions: [
+        {
+          id: 'request-visible',
+          type: 'custom_assert',
+          customHandler: 'request_visible',
+        },
+      ],
+      evidence: { checkpoints: [] },
+      execution: { preferred: 'playwright', fallback: 'aside' },
+    };
+
+    const orchestrator = new FlowOrchestrator({ config });
+    const result = await orchestrator.verifyFlow(flow, {
+      executor: 'hybrid',
+      headless: true,
+    });
+
+    expect(result.status, result.error).toBe('PROVEN');
+    expect(result.passedSteps).toBe(4);
+    expect(result.passedAssertions).toBe(1);
   });
 });

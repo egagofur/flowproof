@@ -1,3 +1,6 @@
+import type { CustomActionHandler } from '../../executors/playwright/actions.js';
+import type { CustomAssertionHandler } from '../../executors/playwright/assertions.js';
+
 export type BrowserExecutorType = 'playwright' | 'aside' | string;
 
 export interface AuthCredentials {
@@ -39,6 +42,8 @@ export interface ExecutionContext {
   tracesDir: string;
   logsDir: string;
   options: ExecutionOptions;
+  customActions?: Record<string, CustomActionHandler>;
+  customAssertions?: Record<string, CustomAssertionHandler>;
 }
 
 export interface AuthResult {

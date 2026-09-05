@@ -62,6 +62,7 @@ export { inspectCommand } from './cli/commands/inspect.js';
 export { evidenceCommand } from './cli/commands/evidence.js';
 export { pruneCommand } from './cli/commands/prune.js';
 export { createRecordCommand } from './cli/commands/record.js';
+export { doctorCommand } from './cli/commands/doctor.js';
 
 // CLI
 export { createCli, runCli } from './cli/index.js';

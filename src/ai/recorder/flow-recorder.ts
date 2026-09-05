@@ -76,13 +76,13 @@ export class FlowRecorder {
     const page = await context.newPage();
 
     // Expose action logger to browser window
-    await page.exposeFunction('__flowproof_record', (action: RecordedAction) => {
+    await page.exposeFunction('__intentproof_record', (action: RecordedAction) => {
       recordedActions.push(action);
       console.log(pc.green(`   ⚡ [Recorded] ${action.type}: ${action.target || action.value || ''}`));
     });
 
     // Expose finish trigger
-    await page.exposeFunction('__flowproof_finish', async () => {
+    await page.exposeFunction('__intentproof_finish', async () => {
       isRecordingComplete = true;
     });
 
@@ -180,11 +180,11 @@ export class FlowRecorder {
         'click',
         (e) => {
           const target = e.target as HTMLElement;
-          if (!target || target.closest('#flowproof-recorder-hud')) return;
+          if (!target || target.closest('#intentproof-recorder-hud')) return;
 
           const selector = getSmartSelector(target);
           const text = target.textContent?.trim();
-          (window as any).__flowproof_record({
+          (window as any).__intentproof_record({
             type: 'click',
             target: selector,
             description: text ? `Click "${text.slice(0, 25)}"` : `Click ${selector}`,
@@ -199,10 +199,10 @@ export class FlowRecorder {
         'change',
         (e) => {
           const target = e.target as HTMLInputElement;
-          if (!target || target.closest('#flowproof-recorder-hud')) return;
+          if (!target || target.closest('#intentproof-recorder-hud')) return;
 
           const selector = getSmartSelector(target);
-          (window as any).__flowproof_record({
+          (window as any).__intentproof_record({
             type: 'fill',
             target: selector,
             value: target.value,
@@ -219,10 +219,10 @@ export class FlowRecorder {
         (e) => {
           if (e.key === 'Enter') {
             const target = e.target as HTMLElement;
-            if (!target || target.closest('#flowproof-recorder-hud')) return;
+            if (!target || target.closest('#intentproof-recorder-hud')) return;
 
             const selector = getSmartSelector(target);
-            (window as any).__flowproof_record({
+            (window as any).__intentproof_record({
               type: 'press_key',
               target: selector,
               value: 'Enter',
@@ -236,9 +236,9 @@ export class FlowRecorder {
 
       // Inject floating recorder HUD
       window.addEventListener('DOMContentLoaded', () => {
-        if (document.getElementById('flowproof-recorder-hud')) return;
+        if (document.getElementById('intentproof-recorder-hud')) return;
         const hud = document.createElement('div');
-        hud.id = 'flowproof-recorder-hud';
+        hud.id = 'intentproof-recorder-hud';
         hud.style.position = 'fixed';
         hud.style.bottom = '20px';
         hud.style.right = '20px';
@@ -260,15 +260,15 @@ export class FlowRecorder {
             <span style="width:10px;height:10px;border-radius:50%;background-color:#ef4444;display:inline-block;animation:pulse 1.5s infinite;"></span>
             <strong>Intentproof Recording</strong>
           </div>
-          <button id="flowproof-btn-finish" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">
+          <button id="intentproof-btn-finish" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">
             Finish & Save YAML
           </button>
         `;
 
         document.body.appendChild(hud);
 
-        document.getElementById('flowproof-btn-finish')?.addEventListener('click', () => {
-          (window as any).__flowproof_finish();
+        document.getElementById('intentproof-btn-finish')?.addEventListener('click', () => {
+          (window as any).__intentproof_finish();
         });
       });
     });

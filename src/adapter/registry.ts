@@ -45,11 +45,6 @@ export class AdapterRegistry {
       'intentproof.config.mjs',
       'intentproof.config.cjs',
       'intentproof.config.json',
-      'flowproof.config.ts',
-      'flowproof.config.js',
-      'flowproof.config.mjs',
-      'flowproof.config.cjs',
-      'flowproof.config.json',
       path.join('intentproof', 'config.ts'),
       path.join('intentproof', 'config.js'),
     ];
@@ -70,7 +65,7 @@ export class AdapterRegistry {
 
     // Default fallback config if none found
     const fallbackConfig: ProjectConfig = {
-      baseUrl: process.env.INTENTPROOF_BASE_URL || process.env.FLOWPROOF_BASE_URL || 'http://localhost:3000',
+      baseUrl: process.env.INTENTPROOF_BASE_URL || 'http://localhost:3000',
       flowsDir: path.resolve(searchDir, 'flows'),
       artifactsDir: path.resolve(searchDir, 'artifacts'),
       defaultExecutor: 'playwright',
@@ -87,8 +82,10 @@ export class AdapterRegistry {
       const content = await fs.readFile(filePath, 'utf-8');
       loaded = JSON.parse(content);
     } else if (filePath.endsWith('.ts') || filePath.endsWith('.mts')) {
-      const tempPath = path.join(configDir, `.intentproof.config.temp.${randomUUID()}.mjs`);
+      const cacheDir = path.join(configDir, 'node_modules', '.cache', 'intentproof');
+      const tempPath = path.join(cacheDir, `config-${randomUUID()}.mjs`);
       try {
+        await fs.mkdir(cacheDir, { recursive: true });
         const { build } = await import('esbuild');
         const currentDir = path.dirname(fileURLToPath(import.meta.url));
         const candidateEntries = [
@@ -124,7 +121,7 @@ export class AdapterRegistry {
             {
               name: 'intentproof-resolver',
               setup(b: any) {
-                b.onResolve({ filter: /^(intentproof|flowproof)$/ }, () => ({
+                b.onResolve({ filter: /^intentproof$/ }, () => ({
                   path: libraryFileUrl,
                   external: true,
                 }));
@@ -145,7 +142,7 @@ export class AdapterRegistry {
       } catch (err: any) {
         throw new Error(`Failed to load Intentproof configuration from ${filePath}: ${err.message}`);
       } finally {
-        await fs.unlink(tempPath).catch(() => {});
+        await fs.rm(tempPath, { force: true, maxRetries: 3, retryDelay: 50 });
       }
     } else {
       const mod = await import(`file://${filePath}`);

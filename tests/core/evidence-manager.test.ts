@@ -10,7 +10,7 @@ describe('EvidenceManager', () => {
   let manager: EvidenceManager;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'flowproof-test-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'intentproof-test-'));
     manager = new EvidenceManager({ baseArtifactsDir: tmpDir });
   });
 
@@ -90,7 +90,7 @@ describe('EvidenceManager', () => {
     expect(JSON.parse(jsonOnDisk).flowId).toBe('test.flow');
 
     const mdOnDisk = await fs.readFile(path.join(context.artifactsDir, 'summary.md'), 'utf-8');
-    expect(mdOnDisk).toContain('# Flowproof Verification: Test Flow');
+    expect(mdOnDisk).toContain('# Intentproof Verification: Test Flow');
     expect(mdOnDisk).toContain('PROVEN');
   });
 });

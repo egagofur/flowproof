@@ -7,7 +7,7 @@ export interface ProjectAnalysis {
   framework: DetectedFramework;
   suggestedPort: number;
   suggestedBaseUrl: string;
-  hasFlowproofConfig: boolean;
+  hasIntentproofConfig: boolean;
   packageJsonExists: boolean;
   projectName: string;
 }
@@ -41,23 +41,19 @@ export class ProjectDetector {
       // package.json may not exist
     }
 
-    let hasFlowproofConfig = false;
+    let hasIntentproofConfig = false;
     const configCandidates = [
       'intentproof.config.ts',
       'intentproof.config.js',
       'intentproof.config.mjs',
       'intentproof.config.json',
-      'flowproof.config.ts',
-      'flowproof.config.js',
-      'flowproof.config.json',
       path.join('intentproof', 'config.ts'),
-      path.join('flowproof', 'config.ts'),
     ];
 
     for (const c of configCandidates) {
       try {
         await fs.access(path.join(projectDir, c));
-        hasFlowproofConfig = true;
+        hasIntentproofConfig = true;
         break;
       } catch {}
     }
@@ -66,7 +62,7 @@ export class ProjectDetector {
       framework,
       suggestedPort,
       suggestedBaseUrl: `http://localhost:${suggestedPort}`,
-      hasFlowproofConfig,
+      hasIntentproofConfig,
       packageJsonExists,
       projectName,
     };

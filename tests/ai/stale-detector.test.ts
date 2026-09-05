@@ -54,6 +54,15 @@ describe('StaleFlowDetector', () => {
     expect(staleResult.isStale).toBe(true);
     expect(staleResult.confidence).toBeGreaterThan(0.8);
     expect(staleResult.proposedPatch).toBeDefined();
+    expect(staleResult.changes).toEqual([
+      {
+        subject: 'step',
+        id: 'step-1',
+        field: 'target',
+        current: "button:has-text('Create Request')",
+        suggested: 'role=button[name="Create Request"]',
+      },
+    ]);
     expect(staleResult.reason).toContain("target 'button:has-text('Create Request')' could not be located");
   });
 });

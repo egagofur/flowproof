@@ -244,19 +244,27 @@ When a flow fails, Intentproof doesn't just output a stack trace. The **AI Diagn
 1. **`application_regression`**: The flow failed because the application logic broke.
 2. **`stale_selector`**: The UI still works, but a CSS class or button label changed (Intentproof proposes a YAML patch!).
 3. **`auth_failure`**: Session expired or login credentials invalid.
-4. **`environment_issue`**: Target backend/server unreachable or timed out.
+4. **`environment_failure`**: Target backend/server unreachable or timed out.
 
 Inspect any execution:
 
 ```bash
 intentproof inspect <executionId>
+intentproof inspect <executionId> --suggest-fix
 ```
 
 ```text
 AI Diagnostic Analysis:
-  Classification: stale_selector (Confidence: 88%)
-  Summary:        Button 'Submit' was renamed to 'Save & Continue'.
-  Proposed Patch: Update target from 'button:has-text("Submit")' to 'button:has-text("Save & Continue")'
+  Classification: stale_selector (Confidence: 86%)
+  Summary:        The Submit button selector could not be located.
+  Proposed Patch: Use role=button[name="Submit"] instead of button:has-text("Submit")
+```
+
+Validate configuration, flow contracts, custom handlers, browser installation,
+artifact permissions, and target connectivity before a run:
+
+```bash
+intentproof doctor
 ```
 
 ---
@@ -334,9 +342,10 @@ jobs:
 | `intentproof verify [options]` | Execute verification for registered flows and generate visual proof evidence. |
 | `intentproof discover` | Discover candidate flows from frontend routes and source files. |
 | `intentproof flows` | List registered flows, priority levels, roles, and tags. |
-| `intentproof inspect <id>` | Inspect AI diagnostic analysis and root cause classifications. |
+| `intentproof inspect <id> [--suggest-fix]` | Inspect diagnostics and propose stale-flow updates. |
 | `intentproof evidence <id>` | List and inspect visual screenshots and Playwright traces. |
 | `intentproof prune` | Clean up old execution runs according to the retention policy. |
+| `intentproof doctor` | Validate project configuration and execution prerequisites. |
 
 ---
 
