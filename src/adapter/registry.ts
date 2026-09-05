@@ -1,5 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { ProjectConfig } from './config.js';
 import { ExecutorRegistry } from '../executors/base.js';
@@ -57,12 +58,14 @@ export class AdapterRegistry {
       const fullPath = path.resolve(searchDir, file);
       try {
         await fs.access(fullPath);
-        const config = await this.importConfig(fullPath);
-        this.registeredConfig = config;
-        return config;
-      } catch {
-        // Continue searching
+      } catch (err: any) {
+        if (err?.code === 'ENOENT') {
+          continue;
+        }
+        throw err;
       }
+
+      return this.importConfig(fullPath);
     }
 
     // Default fallback config if none found
@@ -84,7 +87,7 @@ export class AdapterRegistry {
       const content = await fs.readFile(filePath, 'utf-8');
       loaded = JSON.parse(content);
     } else if (filePath.endsWith('.ts') || filePath.endsWith('.mts')) {
-      const tempPath = path.join(configDir, `.intentproof.config.temp.${Date.now()}.mjs`);
+      const tempPath = path.join(configDir, `.intentproof.config.temp.${randomUUID()}.mjs`);
       try {
         const { build } = await import('esbuild');
         const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -154,7 +157,13 @@ export class AdapterRegistry {
       throw new Error(`Intentproof configuration at ${filePath} is missing required 'baseUrl'`);
     }
 
-    this.registeredConfig = loaded;
-    return loaded;
+    const normalized: ProjectConfig = {
+      ...loaded,
+      flowsDir: path.resolve(configDir, loaded.flowsDir || 'flows'),
+      artifactsDir: path.resolve(configDir, loaded.artifactsDir || 'artifacts'),
+    };
+
+    this.registeredConfig = normalized;
+    return normalized;
   }
 }

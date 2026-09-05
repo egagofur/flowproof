@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -79,8 +79,30 @@ describe('E2E Vertical Slice: Intentproof Verification', () => {
 
     // Test CLI subcommands on the result
     const configPath = path.join(exampleAppDir, 'intentproof.config.ts');
-    await flowsCommand({ json: true, config: configPath });
-    await inspectCommand(result.executionId, { json: true, config: configPath });
-    await evidenceCommand(result.executionId, { json: true, config: configPath });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      await flowsCommand({ json: true, config: configPath });
+      const flowsOutput = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+      expect(flowsOutput.total).toBe(1);
+      expect(flowsOutput.flows[0].id).toBe(flow.id);
+
+      logSpy.mockClear();
+      await inspectCommand(result.executionId, { json: true, config: configPath });
+      const inspectOutput = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+      expect(inspectOutput.executionId).toBe(result.executionId);
+      expect(inspectOutput.status).toBe('PROVEN');
+
+      logSpy.mockClear();
+      await evidenceCommand(result.executionId, { json: true, config: configPath });
+      const evidenceOutput = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+      expect(evidenceOutput.executionId).toBe(result.executionId);
+      expect(evidenceOutput.evidenceFiles).toHaveLength(3);
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 });
