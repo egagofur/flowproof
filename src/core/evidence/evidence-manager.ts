@@ -24,11 +24,11 @@ export class EvidenceManager {
   constructor(options?: EvidenceManagerOptions) {
     this.baseArtifactsDir =
       options?.baseArtifactsDir ||
-      process.env.FLOWPROOF_ARTIFACTS_DIR ||
+      process.env.INTENTPROOF_ARTIFACTS_DIR ||
       path.resolve(process.cwd(), 'artifacts');
     this.retentionDays =
       options?.retentionDays ??
-      parseInt(process.env.FLOWPROOF_ARTIFACT_RETENTION_DAYS || '14', 10);
+      parseInt(process.env.INTENTPROOF_ARTIFACT_RETENTION_DAYS || '14', 10);
     this.redactor = options?.redactor || new SecretRedactor();
   }
 

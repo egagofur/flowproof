@@ -77,7 +77,9 @@ describe('AdapterRegistry', () => {
       Array.from({ length: 4 }, () => AdapterRegistry.loadConfig(projectDir))
     );
 
-    const files = await fs.readdir(projectDir);
-    expect(files).toEqual(['intentproof.config.ts']);
+    const cacheFiles = await fs.readdir(
+      path.join(projectDir, 'node_modules', '.cache', 'intentproof')
+    );
+    expect(cacheFiles).toEqual([]);
   });
 });

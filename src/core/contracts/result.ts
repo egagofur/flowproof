@@ -73,6 +73,22 @@ export type RootCauseClassification =
   | 'auth_failure'
   | 'unknown';
 
+export interface StaleFlowChange {
+  subject: 'step' | 'assertion';
+  id: string;
+  field: 'target' | 'value';
+  current: string;
+  suggested: string;
+}
+
+export interface StaleFlowSuggestion {
+  isStale: boolean;
+  confidence: number;
+  reason?: string;
+  changes?: StaleFlowChange[];
+  proposedPatch?: string;
+}
+
 export interface DiagnosticAnalysis {
   summary: string;
   failureReason?: string;
@@ -82,6 +98,7 @@ export interface DiagnosticAnalysis {
   evidenceReferences: string[];
   affectedFeatures?: string[];
   stalePatchSuggestion?: string;
+  staleSuggestion?: StaleFlowSuggestion;
 }
 
 export interface ExecutionResult {

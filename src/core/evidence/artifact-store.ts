@@ -28,7 +28,7 @@ export class ArtifactStore {
             ? '🚫 BLOCKED'
             : '❓ INCONCLUSIVE';
 
-    let md = `# Flowproof Verification: ${result.flowName}\n\n`;
+    let md = `# Intentproof Verification: ${result.flowName}\n\n`;
     md += `**Status:** ${statusEmoji}\n`;
     md += `**Flow ID:** \`${result.flowId}\`\n`;
     md += `**Executor:** \`${result.executor}\`\n`;

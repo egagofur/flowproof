@@ -40,6 +40,7 @@ describe('intentproof init', () => {
     const gitignorePath = path.join(tmpDir, '.gitignore');
     const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
     expect(gitignoreContent).toContain('artifacts/');
+    expect(gitignoreContent).toContain('.intentproof*/');
   });
 
   it('should detect Next.js framework when next is present in package.json', async () => {

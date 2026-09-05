@@ -39,7 +39,7 @@ export class InteractiveBrowserAuthStrategy implements AuthStrategy {
     }
 
     // 2. Interactive login in visible browser
-    console.log(pc.cyan(`\n🔐 [Flowproof Interactive Auth] Please log in manually in the opened browser window...`));
+    console.log(pc.cyan(`\n🔐 [Intentproof Interactive Auth] Please log in manually in the opened browser window...`));
     console.log(pc.dim(`   Target: ${this.options.loginUrl || '/auth/login'}`));
     console.log(pc.yellow(`   ⏳ Waiting for you to complete login (timeout: ${Math.round((this.options.timeoutMs || 120000) / 1000)}s)...`));
 

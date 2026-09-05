@@ -16,7 +16,7 @@ export class HybridExecutor implements BrowserExecutor {
         ? flow.execution?.preferred || 'playwright'
         : context.options.executor ||
           flow.execution?.preferred ||
-          process.env.FLOWPROOF_BROWSER_EXECUTOR ||
+          process.env.INTENTPROOF_BROWSER_EXECUTOR ||
           'playwright';
 
     const fallbackName = flow.execution?.fallback || (preferredName === 'playwright' ? 'aside' : undefined);

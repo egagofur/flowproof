@@ -1,18 +1,18 @@
-# Flowproof — Architectural Specification
+# Intentproof — Architectural Specification
 
 > **"Don't just test the code. Prove the user flow."**
 
-Flowproof is an AI-driven E2E verification orchestrator for software development workflows. It bridges business intent, automated execution, and human-verifiable evidence.
+Intentproof is an AI-driven E2E verification orchestrator for software development workflows. It bridges business intent, automated execution, and human-verifiable evidence.
 
 ---
 
 ## 1. Core Architecture & System Boundaries
 
-Flowproof enforces a strict three-tier separation of concerns:
+Intentproof enforces a strict three-tier separation of concerns:
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│                         FLOWPROOF CORE                           │
+│                        INTENTPROOF CORE                          │
 │  - Flow Contract & Schema Validation (Zod)                       │
 │  - Flow Lifecycle & Metadata Manager                             │
 │  - Verification Engine (Normalized Status: PROVEN, etc.)         │
@@ -25,7 +25,7 @@ Flowproof enforces a strict three-tier separation of concerns:
                                  ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                        PROJECT ADAPTER                           │
-│  - Project Configuration (flowproof.config.ts)                   │
+│  - Project Configuration (intentproof.config.ts)                 │
 │  - Auth Strategies (Password, Session, Token, OAuth, Browser)    │
 │  - Custom Step Handlers & Domain Assertions                      │
 │  - Fixtures & Test Data Bindings                                 │
@@ -45,7 +45,7 @@ Flowproof enforces a strict three-tier separation of concerns:
 ```
 
 ### Key Architectural Invariants
-1. **Zero Project-Specific Selectors in Core**: Flowproof Core is completely domain-agnostic. All selectors, URLs, and custom authentication mechanisms live within Project Adapters.
+1. **Zero Project-Specific Selectors in Core**: Intentproof Core is completely domain-agnostic. All selectors, URLs, and custom authentication mechanisms live within Project Adapters.
 2. **Pluggable Browser Execution**: Core never calls Playwright or Aside directly. All browser interactions are mediated through the `BrowserExecutor` interface.
 3. **Evidence as First-Class Proof**: Assertions determine truth; visual and telemetry artifacts provide proof. Evidence is captured at explicit checkpoints, not blindly on every interaction.
 4. **Machine & Human Usable**: Produces normalized JSON outputs for CI and AI agents, alongside rich visual summaries and Mattermost reports for engineering teams.
@@ -196,17 +196,17 @@ export interface BrowserExecutor {
 - Gathers visual checkpoints and agent trajectory logs.
 
 ### 3.3 Hybrid & Fallback Strategy
-- Configurable via `execution.preferred` in flow contract or `FLOWPROOF_BROWSER_EXECUTOR` environment variable.
+- Configurable via `execution.preferred` in flow contract or `INTENTPROOF_BROWSER_EXECUTOR` environment variable.
 - On deterministic failure due to potential UI drift, can optionally invoke Aside to investigate and gather diagnostic evidence for the Stale Flow Detector.
 
 ---
 
 ## 4. Project Adapter & Authentication
 
-Projects configure custom adapters via `flowproof.config.ts`:
+Projects configure custom adapters via `intentproof.config.ts`:
 
 ```typescript
-import { defineConfig, PasswordAuthStrategy, SessionAuthStrategy } from 'flowproof';
+import { defineConfig, PasswordAuthStrategy, SessionAuthStrategy } from 'intentproof';
 
 export default defineConfig({
   baseUrl: process.env.APP_BASE_URL || 'http://localhost:3000',
@@ -243,7 +243,7 @@ export default defineConfig({
 ## 5. Verification & Evidence Model
 
 ### 5.1 Verification Status
-Flowproof classifies execution outcomes into 4 normalized top-level states:
+Intentproof classifies execution outcomes into 4 normalized top-level states:
 - **`PROVEN`**: All steps executed and all assertions passed with required evidence artifacts captured.
 - **`FAILED`**: One or more assertions failed (true business defect or UI mismatch).
 - **`BLOCKED`**: Preconditions, authentication, network down, or environment setup failed before assertions could be evaluated.
@@ -271,17 +271,17 @@ artifacts/
 
 ## 6. AI Intelligence Capabilities
 
-### 6.1 AI Flow Mapper (`flowproof discover` / `flowproof map`)
+### 6.1 AI Flow Mapper (`intentproof discover`)
 1. **Source Ingestion**: Analyzes requirements (`*.md`), OpenAPI specs, routes (`react-router`, `next.js`, `vue-router`), UI components, and existing E2E tests.
 2. **Intent Extraction**: Identifies user roles, key user intents, critical paths, inputs, and expected outcomes.
 3. **Flow Contract Synthesis**: Generates draft YAML/JSON flow definitions with confidence scores and source file provenance.
 
-### 6.2 Change Impact Analyzer (`flowproof verify --affected`)
+### 6.2 Change Impact Analyzer (`intentproof verify --affected`)
 1. **Git Diff Analysis**: Extracts modified files, routes, and components between base and head refs.
 2. **Dependency & Route Correlation**: Maps touched files to flow precondition routes, target components, and feature tags.
 3. **Impact Scoring & Selection**: Produces a prioritized list of affected flows with explicit reasoning and confidence metrics.
 
-### 6.3 AI Result Analyzer (`flowproof inspect <id>`)
+### 6.3 AI Result Analyzer (`intentproof inspect <id>`)
 1. Ingests `result.json`, assertion failures, error logs, and checkpoint screenshots.
 2. Correlates failed assertion with recent code changes.
 3. Distinguishes environment issues (e.g. 500 API error, auth timeout) from UI regressions (missing element, wrong text).
@@ -296,7 +296,7 @@ artifacts/
 ## 7. CLI Architecture
 
 ```text
-flowproof <command> [options]
+intentproof <command> [options]
 
 Commands:
   discover                  Discover potential user flows from repository code & specs
@@ -319,7 +319,7 @@ Commands:
 
 1. **Credential Masking**: Credentials and sensitive tokens are injected via environment functions at runtime and NEVER logged or stored in flow contracts.
 2. **Log & Trace Sanitization**: Regex-based redaction filters out Authorization headers, Bearer tokens, passwords, and private keys from stdout, console logs, and HAR files.
-3. **Configurable Retention**: `FLOWPROOF_ARTIFACT_RETENTION_DAYS` automatically cleans up historical screenshot/trace directories to manage disk usage and data privacy.
+3. **Configurable Retention**: `INTENTPROOF_ARTIFACT_RETENTION_DAYS` automatically cleans up historical screenshot/trace directories to manage disk usage and data privacy.
 
 ---
 

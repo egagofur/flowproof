@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Build Flowproof
+    - name: Build Intentproof
       run: pnpm build
 
     - name: Run Vitest Unit & Integration Tests

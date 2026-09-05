@@ -12,8 +12,8 @@ import {
   StepResult,
   VerificationStatus,
 } from '../../core/contracts/result.js';
-import { PlaywrightActionRunner, CustomActionHandler } from './actions.js';
-import { PlaywrightAssertionRunner, CustomAssertionHandler } from './assertions.js';
+import { PlaywrightActionRunner } from './actions.js';
+import { PlaywrightAssertionRunner } from './assertions.js';
 
 export class PlaywrightExecutor implements BrowserExecutor {
   public readonly name = 'playwright';
@@ -29,6 +29,13 @@ export class PlaywrightExecutor implements BrowserExecutor {
   private networkErrors: Array<{ url: string; status: number; method: string; error?: string }> = [];
 
   public async initialize(context: ExecutionContext): Promise<void> {
+    for (const [name, handler] of Object.entries(context.customActions || {})) {
+      this.actionRunner.registerCustomHandler(name, handler);
+    }
+    for (const [name, handler] of Object.entries(context.customAssertions || {})) {
+      this.assertionRunner.registerCustomHandler(name, handler);
+    }
+
     const browserType = context.options.browser || 'chromium';
     const headless = context.options.headless ?? true;
 
