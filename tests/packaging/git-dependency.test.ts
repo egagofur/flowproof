@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -34,15 +35,24 @@ describe('Git dependency packaging', () => {
     expect(help).toContain('Usage: intentproof');
     expect(generateHelp).toContain('Usage: intentproof generate');
 
-    const packOutput = execFileSync(
-      'npm',
-      ['pack', '--dry-run', '--ignore-scripts', '--json'],
-      { cwd: projectRoot, encoding: 'utf8' }
-    );
-    const packed = JSON.parse(packOutput) as Array<{ files: Array<{ path: string }> }>;
-    const files = packed[0].files.map((file) => file.path);
-    expect(files).toContain('bin/intentproof.js');
-    expect(files).toContain('dist/cli/index.js');
-    expect(files).toContain('dist/index.d.ts');
-  }, 30_000);
+    const packDir = fs.mkdtempSync(path.join(os.tmpdir(), 'intentproof-pack-'));
+    try {
+      execFileSync(
+        'npm',
+        ['pack', '--ignore-scripts=true', '--pack-destination', packDir],
+        { cwd: projectRoot, stdio: 'ignore' }
+      );
+      const tarballs = fs.readdirSync(packDir).filter((file) => file.endsWith('.tgz'));
+      expect(tarballs).toHaveLength(1);
+
+      const files = execFileSync('tar', ['-tf', path.join(packDir, tarballs[0])], {
+        encoding: 'utf8',
+      }).split(/\r?\n/);
+      expect(files).toContain('package/bin/intentproof.js');
+      expect(files).toContain('package/dist/cli/index.js');
+      expect(files).toContain('package/dist/index.d.ts');
+    } finally {
+      fs.rmSync(packDir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
